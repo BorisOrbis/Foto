@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FotoKalk</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0c0e" id="themeColorMeta">
+<meta name="description" content="Kalkulator honorara za fotografe — Adriatic.hr i privatni najam (RH 2026)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FotoKalk">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#0b0c0e;--surf:#13151a;--surf2:#1a1d25;--surf3:#21252f;--brd:#272b36;--brd2:#323848;--acc:#f0c040;--acc2:#d4a030;--grn:#34d399;--red:#f87171;--blu:#60a5fa;--pur:#a78bfa;--txt:#e2e6f0;--mut:#636b80;--mut2:#8892a4;--mono:ui-monospace,'Cascadia Code','Source Code Pro','Courier New',monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--r:10px}
+body.light{--bg:#f0f2f5;--surf:#fff;--surf2:#e8eaf0;--surf3:#dde0e8;--brd:#d0d4de;--brd2:#b8bdd0;--txt:#1a1d25;--mut:#8892a4;--mut2:#636b80}
+body.light input,body.light select{background:#f8f9fc;border-color:#c8cdd8;color:#1a1a2e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:100vh;padding-bottom:calc(80px + env(safe-area-inset-bottom));padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+/* HEADER */
+header{background:var(--surf);border-bottom:1px solid var(--brd);padding:10px 14px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:200}
+.theme-sl{position:relative;display:inline-flex;align-items:center;width:52px;height:28px;cursor:pointer;flex-shrink:0}
+.theme-sl-track{position:absolute;inset:0;border-radius:28px;background:var(--brd2);border:1px solid var(--brd2);transition:background .25s}
+body.light .theme-sl-track{background:#d0d4dd}
+.theme-sl-knob{position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .25s;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+body.light .theme-sl-knob{transform:translateX(24px)}
+.tabs{display:flex;gap:3px;margin-left:auto}
+.tab{background:transparent;border:1px solid var(--brd);color:var(--mut2);font-family:var(--sans);font-size:.75rem;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer;transition:all .18s}
+.icon-tab{padding:6px 10px;display:inline-flex;align-items:center;justify-content:center;min-width:36px}
+.tab.active{background:var(--acc);color:#000;border-color:var(--acc)}
+.tab:hover:not(.active){border-color:var(--acc);color:var(--acc)}
+.hbg{width:36px;height:30px;padding:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;flex-shrink:0}
+.hbg-l{display:block;width:14px;height:2px;background:var(--mut2);border-radius:2px}
+.hbg.active .hbg-l{background:#000}
+.hbg:hover:not(.active) .hbg-l{background:var(--acc)}
+/* MODE BAR */
+.mode-bar{background:var(--surf);border-bottom:2px solid var(--brd);padding:10px 14px;display:flex;justify-content:center}
+.mode-sw{display:flex;background:var(--surf2);border:1px solid var(--brd);border-radius:30px;padding:3px;gap:2px;max-width:320px;width:100%}
+.mode-btn{flex:1;padding:7px 10px;border-radius:26px;border:none;font-family:var(--sans);font-size:.82rem;font-weight:700;cursor:pointer;background:transparent;color:var(--mut2)}
+.mode-btn.active{background:var(--acc);color:#000}
+body.apt .mode-btn.active{background:var(--grn);color:#000}
+body.apt{--acc:var(--grn);--acc2:#22a374}
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:18px 14px 0}
+/* WRAPPERS */
+#aw{display:block}
+#pw{display:none}
+/* PAGES */
+.pg{display:none}
+.pg.on{display:block}
+/* CARD */
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.ct{font-size:.62rem;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--mut2);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.ct::after{content:'';flex:1;height:1px;background:var(--brd)}
+/* FORM */
+.row{display:grid;gap:10px;margin-bottom:10px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}
+label{font-size:.72rem;color:var(--mut2);font-weight:600;display:block;margin-bottom:4px}
+input,select{width:100%;background:var(--surf2);border:1px solid var(--brd);border-radius:7px;color:var(--txt);font-family:var(--mono);font-size:.85rem;padding:8px 10px;outline:none;transition:border-color .18s}
+input:focus,select:focus{border-color:var(--acc)}
+select option{background:var(--surf2)}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.5;filter:invert(.5)}
+body.light input[type=date]::-webkit-calendar-picker-indicator{filter:none}
+/* KAT */
+.kat-list{display:flex;flex-direction:column;gap:6px}
+.kat-row{background:var(--surf2);border:1px solid var(--brd);border-radius:8px;padding:9px 11px;transition:border-color .18s}
+.kat-row.on{border-color:var(--acc);background:rgba(240,192,64,.04)}
+body.apt .kat-row.on{background:rgba(52,211,153,.04)}
+.kat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.kat-nm{font-size:.8rem;font-weight:600}
+.kat-q{font-family:var(--mono);font-size:.8rem;color:var(--acc)}
+.kat-boxes{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.kbox{height:26px;border-radius:5px;border:1px solid var(--brd2);background:var(--surf3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.72rem;color:var(--mut);transition:all .15s;user-select:none}
+.kbox:hover{border-color:var(--acc)}
+.kbox.on{background:var(--acc);border-color:var(--acc);color:#000;font-weight:700}
+/* TOGGLES */
+.tog-box{background:var(--surf2);border:1px solid var(--brd);border-radius:8px;padding:11px 13px;display:flex;flex-direction:column;gap:9px}
+.tog-row{display:flex;align-items:center;gap:10px}
+.tog-row span{font-size:.82rem;font-weight:600}
+.tsw{position:relative;display:inline-flex;align-items:center;width:50px;height:26px;cursor:pointer;flex-shrink:0}
+.tsw-t{position:absolute;inset:0;border-radius:26px;background:var(--brd2);border:1px solid var(--brd2);transition:background .2s}
+.tsw.on .tsw-t{background:var(--acc);border-color:var(--acc)}
+.tsw-k{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tsw.on .tsw-k{transform:translateX(24px)}
+.dp{display:flex;align-items:center;gap:7px}.dp label{margin:0;font-size:.7rem;white-space:nowrap}.dp input{width:85px!important}
+/* OBRACUN */
+.op{background:var(--surf2);border:1px solid var(--brd);border-radius:var(--r);overflow:hidden}
+.os{padding:11px 14px;border-bottom:1px solid var(--brd)}.os:last-child{border-bottom:none}
+.ost{font-size:.58rem;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut);margin-bottom:7px}
+.or{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.82rem}
+.or .l{color:var(--mut2)}.or .v{font-family:var(--mono);font-size:.82rem}
+.or.hi .l{color:var(--txt);font-weight:600}.or.hi .v{color:var(--acc);font-size:.9rem}
+.or.rd .v{color:var(--red)}.or.bl .v{color:var(--blu)}
+/* NB */
+.nb{background:var(--txt);border-radius:8px;padding:13px 15px;display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.nb .l{font-size:.82rem;color:var(--bg);font-weight:700}
+.nb .v{font-family:var(--mono);font-size:1.5rem;color:var(--bg);font-weight:700}
+.nb2{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:8px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.nb2 .l{font-size:.8rem;color:var(--pur);font-weight:700}
+.nb2 .v{font-family:var(--mono);font-size:1rem;color:var(--pur)}
+/* INFO BOXES */
+.ib{background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.2);border-radius:8px;padding:9px 12px;font-size:.72rem;color:var(--blu);line-height:1.6;margin-top:9px}
+.wb{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:9px 12px;font-size:.72rem;color:var(--red);line-height:1.6;margin-top:7px}
+/* BTNS */
+.btn{font-family:var(--sans);font-weight:700;font-size:.78rem;padding:9px 17px;border-radius:7px;border:none;cursor:pointer;transition:all .18s}
+.bp{background:var(--acc);color:#000}.bp:hover{background:var(--acc2)}
+.bo{background:transparent;border:1px solid var(--brd2);color:var(--mut2)}.bo:hover{border-color:var(--acc);color:var(--acc)}
+.bd{background:transparent;border:1px solid var(--red);color:var(--red);font-size:.72rem;padding:5px 10px}.bd:hover{background:var(--red);color:#fff}
+.br{display:flex;gap:8px;align-items:center;margin-top:13px;flex-wrap:wrap}
+/* HIST */
+.hi{background:var(--surf2);border:1px solid var(--brd);border-radius:var(--r);padding:13px 15px;margin-bottom:9px}
+.hi-h{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.hi-nm{font-size:.9rem;font-weight:700}.hi-dt{font-family:var(--mono);font-size:.68rem;color:var(--mut);margin-top:2px}
+.hi-am{text-align:right}.hi-br{font-family:var(--mono);font-size:1rem;color:var(--acc)}.hi-nt{font-family:var(--mono);font-size:.78rem;color:var(--grn)}
+.hi-tags{display:flex;flex-wrap:wrap;gap:5px}
+.tg{background:var(--surf3);border:1px solid var(--brd);border-radius:4px;font-family:var(--mono);font-size:.68rem;color:var(--mut2);padding:2px 6px}
+.hi-ft{display:flex;justify-content:flex-end;gap:6px;margin-top:9px;padding-top:8px;border-top:1px solid var(--brd);align-items:center}
+.bdg{display:inline-flex;align-items:center;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;cursor:pointer;border:1px solid;user-select:none;transition:all .18s}
+.bdg.y{background:rgba(52,211,153,.12);color:var(--grn);border-color:rgba(52,211,153,.3)}
+.bdg.n{background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.3)}
+/* STATS */
+.sr{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px}
+.st{background:var(--surf2);border:1px solid var(--brd);border-radius:var(--r);padding:13px;text-align:center}
+.sv{font-family:var(--mono);font-size:1.2rem;color:var(--acc);margin-bottom:3px}
+.sl{font-size:.62rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+.unp{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.unp .l{color:var(--red);font-weight:600;font-size:.8rem}
+.unp .v{font-family:var(--mono);color:var(--red);font-size:.95rem;font-weight:700}
+/* FILTER */
+.frow{display:flex;gap:5px;margin-bottom:11px;flex-wrap:wrap}
+.ft{background:transparent;border:1px solid var(--brd);color:var(--mut2);font-family:var(--sans);font-size:.72rem;font-weight:600;padding:4px 12px;border-radius:20px;cursor:pointer;transition:all .18s}
+.ft.on{background:var(--acc);color:#000;border-color:var(--acc)}
+/* SETTINGS ROWS */
+.setr{display:flex;align-items:center;gap:9px;background:var(--surf2);border:1px solid var(--brd);border-radius:8px;padding:8px 11px;margin-bottom:7px}
+.setr label{flex:1;margin:0;font-size:.8rem;color:var(--txt)}.setr input{width:95px!important}
+.sbg{font-family:var(--mono);font-size:.65rem;background:rgba(240,192,64,.15);color:var(--acc);border:1px solid rgba(240,192,64,.2);border-radius:4px;padding:1px 6px}
+/* KLIJENTI */
+.plan-card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;border-left:4px solid var(--brd)}
+.plan-card.ceka{border-left-color:var(--acc)}
+.plan-card.nodatum{border-left-color:var(--mut);border-style:dashed}
+.plan-card.obavljeno{border-left-color:var(--grn)}
+.plan-card.otkazano{border-left-color:var(--red);opacity:.65}
+.plan-dt{font-size:1rem;font-weight:700;margin-bottom:6px}
+.plan-stat{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid;display:inline-block;margin-bottom:8px}
+.plan-stat.ceka{background:rgba(240,192,64,.12);color:var(--acc);border-color:rgba(240,192,64,.3)}
+.plan-stat.obavljeno{background:rgba(52,211,153,.12);color:var(--grn);border-color:rgba(52,211,153,.3)}
+.plan-stat.otkazano{background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.3)}
+.kl-btn{background:transparent;border:1px solid var(--brd2);color:var(--mut2);font-family:var(--sans);font-size:.78rem;font-weight:700;padding:7px 28px;border-radius:20px;cursor:pointer;transition:all .18s;letter-spacing:.3px}
+.kl-btn.on{background:var(--acc);color:#000;border-color:var(--acc)}
+.kl-btn:hover:not(.on){border-color:var(--acc);color:var(--acc)}
+.kl-card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;position:relative}
+.kl-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.kl-ime{font-size:.95rem;font-weight:700}
+.kl-status{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid;white-space:nowrap}
+.kl-status.ok{background:rgba(52,211,153,.12);color:var(--grn);border-color:rgba(52,211,153,.3)}
+.kl-status.no{background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.3)}
+.kl-row{font-size:.8rem;color:var(--mut2);margin-bottom:4px;display:flex;align-items:flex-start;gap:6px}
+.kl-row a{color:var(--blu);text-decoration:none;word-break:break-all}
+.kl-row a:hover{text-decoration:underline}
+.kl-actions{display:flex;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid var(--brd);justify-content:flex-end}
+.kl-note{font-size:.75rem;color:var(--mut);font-style:italic;margin-top:6px}
+/* KL-OBJ */
+.kl-obj{background:var(--surf2);border:1px solid var(--brd);border-radius:7px;padding:9px 11px;margin-bottom:6px}
+.kl-obj:last-child{margin-bottom:0}
+.kl-obj.obj-foto{border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.04)}
+.kl-objs{display:flex;flex-direction:column;gap:0}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:flex-end;justify-content:center}
+.modal-bg.on{display:flex}
+/* ONBOARDING */
+#onboardModal{display:none;position:fixed;inset:0;background:var(--bg);z-index:900;overflow-y:auto;padding:0}
+#onboardModal.on{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
+.ob-wrap{max-width:420px;width:100%;padding:32px 24px 40px}
+.ob-logo{font-size:2.2rem;font-weight:800;color:var(--acc);letter-spacing:-1px;margin-bottom:4px}
+.ob-sub{font-size:.85rem;color:var(--mut2);margin-bottom:32px}
+.ob-title{font-size:1.1rem;font-weight:700;color:var(--txt);margin-bottom:6px}
+.ob-desc{font-size:.78rem;color:var(--mut2);margin-bottom:24px;line-height:1.5}
+.ob-field{margin-bottom:16px}
+.ob-field label{font-size:.72rem;color:var(--mut2);font-weight:600;display:block;margin-bottom:5px}
+.ob-field input,.ob-field select{width:100%;background:var(--surf2);border:1px solid var(--brd);border-radius:8px;color:var(--txt);font-family:var(--sans);font-size:.9rem;padding:11px 13px;outline:none;transition:border-color .18s}
+.ob-field input:focus,.ob-field select:focus{border-color:var(--acc)}
+.ob-note{font-size:.72rem;color:var(--mut);margin-top:5px;line-height:1.4}
+.ob-note.warn{color:var(--red)}
+.ob-btn{width:100%;padding:13px;background:var(--acc);color:#000;font-weight:700;font-size:.95rem;border:none;border-radius:10px;cursor:pointer;margin-top:8px;font-family:var(--sans)}
+.ob-skip{width:100%;padding:8px;background:transparent;color:var(--mut);font-size:.78rem;border:none;cursor:pointer;margin-top:6px;font-family:var(--sans)}
+.modal{background:var(--surf);border-radius:16px 16px 0 0;padding:20px 18px 32px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:1rem;font-weight:700;margin-bottom:16px}
+.modal-actions{display:flex;gap:8px;margin-top:16px}
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:18px;background:var(--acc);color:#000;font-family:var(--sans);font-weight:700;font-size:.78rem;padding:8px 15px;border-radius:8px;z-index:999;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.on{opacity:1;transform:translateY(0)}.toast.err{background:var(--red);color:#fff}
+.empty{text-align:center;padding:40px 20px;color:var(--mut);font-size:.8rem}
+@media(max-width:600px){.c2,.c3{grid-template-columns:1fr}}
+/* CUSTOM CONFIRM MODAL */
+.conf-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center}
+.conf-modal.on{display:flex}
+.conf-box{background:var(--surf);border-radius:14px;padding:22px 20px;width:300px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.conf-msg{font-size:.9rem;font-weight:600;margin-bottom:18px;line-height:1.5;color:var(--txt)}
+.conf-btns{display:flex;gap:8px;justify-content:flex-end}
+/* GDPR BAR */
+.gdpr-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surf2);border-top:1px solid var(--brd);padding:10px 14px calc(10px + env(safe-area-inset-bottom));font-size:.72rem;color:var(--mut2);display:flex;align-items:center;gap:10px;z-index:290}
+/* TOUCH TARGETS mobile */
+@media(max-width:600px){.kbox{height:40px;font-size:.8rem}.kat-boxes{gap:6px}}
+@media print{
+  @page{margin:12mm;size:A4 portrait}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  header,.mode-bar,.br,.btn,.tabs,#postBtn{display:none!important}
+  #aw,#pw{display:block!important}
+  .pg{display:none!important}.pg.on{display:block!important}
+  body{background:#fff!important;color:#000!important}
+  .card{border:1px solid #ccc!important;background:#fff!important}
+  .hi{background:#f9f9f9!important;border:1px solid #ddd!important;page-break-inside:avoid}
+  .nb{background:#1a1d25!important}.nb .l,.nb .v{color:#fff!important}
+}
+</style>
+</head>
+<body class="light">
+<header>
+  <label class="theme-sl" onclick="toggleTheme();return false;">
+    <div class="theme-sl-track"></div>
+    <div class="theme-sl-knob" id="themeKnob">☀️</div>
+  </label>
+  <div class="tabs" id="tabsBar"></div>
+  <button class="tab hbg" id="postBtn" onclick="openPost()">
+    <span class="hbg-l"></span><span class="hbg-l"></span><span class="hbg-l"></span>
+  </button>
+</header>
+
+<div class="mode-bar">
+  <div class="mode-sw">
+    <button class="mode-btn" id="btnA" onclick="setMode('a')">Adriatic.hr</button>
+    <button class="mode-btn" id="btnP" onclick="setMode('p')">Apartmani</button>
+  </div>
+</div>
+
+
+<!-- KLIJENT MODAL -->
+<div class="modal-bg" id="klModal">
+  <div class="modal">
+    <div class="modal-title" id="klModalTitle">Novi klijent</div>
+    <div class="ct" style="margin-bottom:10px">Vlasnik</div>
+    <div class="row c2">
+      <div><label>Ime</label><input type="text" id="kl-ime1" placeholder="Ime"></div>
+      <div><label>Prezime</label><input type="text" id="kl-ime2" placeholder="Prezime"></div>
+    </div>
+    <div style="margin-bottom:12px"><label>Telefon</label><input type="tel" id="kl-tel" placeholder="+385 91 ..."></div>
+    <div id="kl-obj-section"><div class="ct" style="margin-bottom:10px">Objekt</div>
+    <div class="row c2">
+      <div><label>Šifra objekta</label><input type="text" id="kl-nm" placeholder="12345"></div>
+      <div><label>Broj ugovora</label><input type="text" id="kl-ug" placeholder="npr. 1191/2026"></div>
+    </div>
+    <div style="margin-bottom:10px"><label>Adresa objekta</label><input type="text" id="kl-adr" placeholder="Ul. i broj, Grad"></div>
+    <div class="row c2">
+      <div><label>GPS — Širina (lat)</label><input type="number" id="kl-lat" placeholder="44.8666" step="0.000001"></div>
+      <div><label>GPS — Duljina (lng)</label><input type="number" id="kl-lng" placeholder="13.8496" step="0.000001"></div>
+    </div>
+    <div class="row c2">
+      <div><label>Datum snimanja</label><input type="date" id="kl-dt"></div>
+      <div><label>Status</label>
+        <select id="kl-stat">
+          <option value="nije">Nije fotografiran</option>
+          <option value="jest">Fotografiran</option>
+          <option value="otkazano">Otkazano</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px"><label>Napomena</label><input type="text" id="kl-note" placeholder="Npr. klijent traži HDR, pristup dronom..."></div>
+    </div><!-- /kl-obj-section -->
+    <div class="modal-actions">
+      <button class="btn bp" onclick="klSave()">💾 Spremi</button>
+      <button class="btn bo" onclick="klCancel()">Odustani</button>
+      <button class="btn bd" id="klDelBtn" style="display:none" onclick="klObjDelete()">🗑 Obriši objekt</button>
+      <button class="btn bd" id="klOwnerDelBtn" style="display:none" onclick="klOwnerDelete()">🗑 Obriši vlasnika</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAN MODAL -->
+<div class="modal-bg" id="planModal">
+  <div class="modal">
+    <div class="modal-title" id="planModalTitle">Novi termin snimanja</div>
+    <div class="row c2">
+      <div><label>Datum snimanja</label><input type="date" id="pl-dt"></div>
+      <div><label>Šifra objekta</label><input type="text" id="pl-sifra" placeholder="npr. 12345"></div>
+    </div>
+    <div class="row c2">
+      <div><label>Ime vlasnika</label><input type="text" id="pl-ime1" placeholder="Ime"></div>
+      <div><label>Prezime vlasnika</label><input type="text" id="pl-ime2" placeholder="Prezime"></div>
+    </div>
+    <div class="row c2">
+      <div><label>Broj ugovora</label><input type="text" id="pl-ug" placeholder="npr. 1191/2026"></div>
+      <div><label>Telefon</label><input type="tel" id="pl-tel" placeholder="+385 91 ..."></div>
+    </div>
+    <div class="row c2">
+      <div><label>Status</label>
+        <select id="pl-stat">
+          <option value="ceka">Na čekanju</option>
+          <option value="obavljeno">Obavljeno</option>
+          <option value="otkazano">Otkazano</option>
+        </select>
+      </div>
+      <div></div>
+    </div>
+    <div style="margin-bottom:10px"><label>Adresa objekta</label><input type="text" id="pl-adr" placeholder="Ul. i broj, Grad"></div>
+    <div class="row c2">
+      <div><label>GPS — Širina (lat)</label><input type="number" id="pl-lat" placeholder="44.8666" step="0.000001"></div>
+      <div><label>GPS — Duljina (lng)</label><input type="number" id="pl-lng" placeholder="13.8496" step="0.000001"></div>
+    </div>
+    <div style="margin-bottom:10px"><label>Napomena</label><input type="text" id="pl-note" placeholder="Npr. klijent traži HDR..."></div>
+    <div class="modal-actions">
+      <button class="btn bp" onclick="planSave()">&#128190; Spremi</button>
+      <button class="btn bo" onclick="planCancel()">Odustani</button>
+      <button class="btn bd" id="planDelBtn" style="display:none" onclick="planDelete()">&#128465; Obriši</button>
+    </div>
+  </div>
+</div>
+
+<main>
+
+<!-- ══ ADRIATIC ══ -->
+<div id="aw">
+  <!-- KALK -->
+  <div class="pg" id="a-kalk">
+    <div class="card">
+      <div class="ct">Posao</div>
+      <div class="row c3">
+        <div><label>Šifra objekta</label><input type="text" id="a-sifra" placeholder="npr. 12345"></div>
+        <div><label>Datum</label><input type="date" id="a-dt"></div>
+        <div><label>Lokacija</label><input type="text" id="a-loc" placeholder="Pula, Rovinj…"></div>
+      </div>
+      <div class="row c3">
+        <div><label>Ime vlasnika</label><input type="text" id="a-ime1" placeholder="Ime"></div>
+        <div><label>Prezime vlasnika</label><input type="text" id="a-ime2" placeholder="Prezime"></div>
+        <div><label>Broj ugovora</label><input type="text" id="a-ugsifra" placeholder="npr. 1191/2026"></div>
+      </div>
+      <div style="margin-top:6px">
+        <select id="a-kl-pick" style="font-size:.75rem;padding:6px 8px;width:100%" onchange="posaoFromKlijent(this.value)">
+          <option value="">&#8681; Popuni iz klijenta...</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">Fotografske kategorije — <span style="color:var(--acc);font-size:.7rem" id="a-kc">0 kat · 0 kom</span></div>
+      <div class="kat-list" id="a-kg"></div>
+      <div class="ib" style="margin-top:10px">ℹ️ Svaka kategorija = <strong id="a-cp">6,50 €</strong> bruto (čl.4)</div>
+    </div>
+    <div class="card">
+      <div class="ct">Fotografiranje dronom</div>
+      <div class="tog-box">
+        <div class="tog-row">
+          <div class="tsw" id="a-dron-sw" onclick="togDron()"><div class="tsw-t"></div><div class="tsw-k"></div></div>
+          <span>Fotografiranje dronom (min. 4 pozicije)</span>
+        </div>
+        <div class="dp"><label>Bruto (€)</label><input type="number" id="a-dron-p" value="32.50" step="0.5" oninput="aCalc()"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">Putni troškovi</div>
+      <div class="row c3">
+        <div><label>Km — jedna relacija</label><input type="number" id="a-km" placeholder="0" min="0" oninput="aCheckKm();aCalc()"></div>
+        <div><label>€/km</label><input type="number" id="a-kmr" value="0.40" step="0.01" oninput="aCalc()"></div>
+        <div><label>Prag km</label><input type="number" id="a-kmt" value="5" step="1" min="0" oninput="aCheckKm();aCalc()"></div>
+      </div>
+      <div id="a-km-note" class="ib" style="display:none"></div>
+      <div style="margin-top:9px"><label>Dodatni troškovi — trajekt, cestarina (€)</label><input type="number" id="a-ext" placeholder="0.00" min="0" step="0.5" oninput="aCalc()"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Otkazano snimanje</div>
+      <div class="tog-box">
+        <div class="tog-row">
+          <div class="tsw" id="a-ot-sw" onclick="togOtkaz()"><div class="tsw-t"></div><div class="tsw-k"></div></div>
+          <span>Snimanje otkazano po dolasku</span>
+        </div>
+        <div class="dp"><label>Propuštena dobit (€)</label><input type="number" id="a-ot-n" value="30.00" step="0.5" oninput="aCalc()"></div>
+      </div>
+      <div class="wb" id="a-ot-note" style="display:none">⚠️ Otkaz: putni troškovi + propratni + 30 € naknade za propuštenu dobit.</div>
+    </div>
+    <div class="card">
+      <div class="ct">Napomena</div>
+      <input type="text" id="a-note" placeholder="Npr. urgentno…">
+    </div>
+    <div class="card">
+      <div class="ct">Obračun — RH 2026</div>
+      <div class="op" id="a-op"></div>
+      <div class="nb"><span class="l">NETO</span><span class="v" id="a-neto">0,00 €</span></div>
+      <div class="ib" id="a-pi"></div>
+      <div class="br">
+        <button class="btn bp" onclick="aSave()">💾 Spremi</button>
+        <button class="btn bo" onclick="aReset()">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIST -->
+  <div class="pg" id="a-hist">
+    <div class="nb" style="margin-bottom:10px;border-radius:10px"><span class="l" style="font-size:.9rem">UKUPNI NETO</span><span class="v" id="a-s3" style="font-size:1.7rem">0 €</span></div>
+    <div class="sr"><div class="st"><div class="sv" id="a-s1">0</div><div class="sl">Poslova</div></div><div class="st"><div class="sv" id="a-s2">0 €</div><div class="sl">Ukupno bruto</div></div></div>
+    <div class="unp" id="a-unp" style="display:none"><span class="l">⚠️ Neplaćeno</span><span class="v" id="a-unpv">0 €</span></div>
+    <div class="ib" id="a-pdv-warn" style="display:none;margin-bottom:9px">⚠️ <strong>PDV prag:</strong> Godišnji promet bliži se pragu od 60.000 € — moguća obveza upisa u registar PDV obveznika (od 1.1.2025.)!</div>
+    <div class="card">
+      <div class="ct">Zarada po mjesecima</div>
+      <div class="ch-wrap"><svg id="a-ch" height="110"></svg></div>
+    </div>
+    <div class="card">
+      <div class="ct" style="margin-bottom:9px">Evidencija — Adriatic.hr
+        <div style="margin-left:auto;display:flex;gap:5px">
+          <button class="btn bo" style="font-size:.7rem;padding:4px 10px" onclick="doXLSX('a')">⬇ Excel</button>
+          <button class="btn bo" style="font-size:.7rem;padding:4px 10px" onclick="aEvidencijaPrint()">🖨 Evidencija PDF</button>
+          <button class="btn bo" style="font-size:.7rem;padding:4px 10px" onclick="doJSON('a')">⬇ JSON</button>
+        </div>
+      </div>
+      <div class="frow">
+        <button class="ft on" onclick="setFilt('a','sve',this)">Sve</button>
+        <button class="ft" onclick="setFilt('a','nep',this)">Neplaćeno</button>
+        <button class="ft" onclick="setFilt('a','pl',this)">Plaćeno</button>
+      </div>
+      <div id="a-hl"></div>
+    </div>
+  </div>
+
+  <!-- POST -->
+  <div class="pg" id="a-post">
+    <div class="card">
+      <div class="ct">Naknade — Adriatic.hr čl.4</div>
+      <div class="setr"><label>Honorar/kategoriji (bruto €) <span class="sbg">čl.4</span></label><input type="number" id="a-s-cp" value="6.50" step="0.5" onchange="aSaveCfg()"></div>
+      <div class="setr"><label>Honorar dron (bruto €) <span class="sbg">čl.4</span></label><input type="number" id="a-s-dp" value="32.50" step="0.5" onchange="aSaveCfg()"></div>
+      <div class="setr"><label>€/km <span class="sbg">čl.4</span></label><input type="number" id="a-s-kr" value="0.40" step="0.01" onchange="aSaveCfg()"></div>
+      <div class="setr"><label>Prag km <span class="sbg">čl.4</span></label><input type="number" id="a-s-kt" value="5" step="1" onchange="aSaveCfg()"></div>
+      <div class="setr"><label>Propuštena dobit — otkaz (€) <span class="sbg">čl.4</span></label><input type="number" id="a-s-ot" value="30.00" step="0.5" onchange="aSaveCfg()"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Porezne stope — RH 2026</div>
+      <div class="setr"><label>Grad / općina</label><select id="a-s-grad" onchange="settingsGradChange('a-s-grad')"></select></div>
+      <div class="setr"><label>Paušalni izdaci (%) <span class="sbg">ZPD</span></label><input type="number" id="a-s-iz" value="30" step="1" onchange="aSaveCfg()"></div>
+      <div class="ib" style="margin-top:4px;font-size:.72rem">💡 <strong>Fotografska umjetnost:</strong> Uz potvrdu strukovne udruge moguće je primijeniti <strong>55% paušalnih izdataka</strong> (30% normirani + 25% neoporezivi primitak, čl.39. ZPD). Konzultirajte poreznog savjetnika.</div>
+      <div class="setr"><label>MIO doprinos (%) <span class="sbg">ZD</span></label><input type="number" id="a-s-mio" value="10" step="0.5" onchange="aSaveCfg()"></div>
+      <div class="setr"><label>Zdravstveno — naručiteljev trošak (%) <span class="sbg">ZD</span></label><input type="number" id="a-s-zo" value="7.5" step="0.5" onchange="aSaveCfg()"></div>
+      <div class="setr"><label for="a-s-pd" id="a-s-pd-label">Porez na dohodak Pula 2026 niža stopa (%) <span class="sbg">JLS</span></label><input type="number" id="a-s-pd" value="22" step="1" onchange="aSaveCfg()"></div>
+      <div class="ib" id="a-pd-info" style="margin-top:8px">ℹ️ Pula 2026: 22% niža stopa / 32% viša stopa. Prirez ukinut. ZO plaća Naručitelj.</div>
+      <div class="wb" id="a-umir-warn" style="margin-top:6px;display:none">⚠️ Umirovljenik: doprinosi se obračunavaju i na autorsku naknadu. Konzultacija s računovođom!</div>
+    </div>
+    <div class="card">
+      <div class="ct">Moj status</div>
+      <div class="setr">
+        <label>Status fotografa</label>
+        <select id="settings-status" onchange="settingsStatusChange()">
+          <option value="samostalni">Samostalni umjetnik / obrtnik</option>
+          <option value="zaposlen">Zaposlen kod poslodavca</option>
+          <option value="umirovljenik">Umirovljenik</option>
+        </select>
+      </div>
+      <div class="ib" id="settings-status-note" style="margin-top:6px;display:none"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Kategorije objekta</div>
+      <div id="a-ksl"></div>
+      <div style="display:flex;gap:7px;margin-top:9px;align-items:flex-end">
+        <div style="flex:1"><label>Nova kategorija</label><input type="text" id="a-nk" placeholder="npr. Garaža"></div>
+        <button class="btn bp" onclick="aAddKat()">+ Dodaj</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">💾 Backup — sve podatke</div>
+      <div id="backupReminderBanner" style="display:none;align-items:center;gap:10px;background:rgba(240,192,64,.10);border:1px solid var(--acc);border-radius:8px;padding:10px 13px;margin-bottom:12px">
+        <span style="font-size:1.1rem">⏰</span>
+        <span style="font-size:.8rem;flex:1;color:var(--txt)">Nisi radio backup <strong id="backupDaysAgo"></strong> — preporučujemo da napraviš backup i pošalješ ga sebi.</span>
+        <button class="btn bd" style="font-size:.68rem;padding:3px 9px;flex-shrink:0" onclick="dismissBackupReminder()">✕</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bp" onclick="backupAll()">⬇ Preuzmi backup</button>
+        <button class="btn bp" id="shareBackupBtn" onclick="shareBackup()" style="background:var(--blu);border-color:var(--blu);color:#fff">↗ Podijeli backup</button>
+        <button class="btn bo" onclick="g('importFileInput').click()">⬆ Uvezi backup</button>
+        <input type="file" id="importFileInput" accept=".json,.txt" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" onchange="importAll(event)">
+      </div>
+      <div class="ib" style="margin-top:8px">ℹ️ Backup sadrži podatke obje aplikacije + sve postavke. Podijeli ga WhatsApp-om, mailom, na Drive — gdje god želiš.</div>
+    </div>
+    <div class="card">
+      <div class="ct">⚠️ Opasna zona</div>
+      <button class="btn bd" onclick="clearData('a')">🗑 Obriši povijest Adriatic.hr</button>
+    </div>
+  </div>
+
+  <!-- KLIJENTI -->
+  <div class="pg" id="a-kl">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="ct" style="margin:0;flex:1">Klijenti — Adriatic.hr</div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn bo" style="font-size:.75rem;padding:7px 14px" onclick="klExportCSV()" title="Export CSV za Google Sheets">&#8681; CSV</button>
+        <button class="btn bo" style="font-size:.75rem;padding:7px 14px" onclick="document.getElementById('csvFileInput').click()" title="Uvezi CSV iz Google Sheets">&#8679; CSV</button>
+        <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none" onchange="klImportCSV(event)">
+        <button class="btn bp" style="font-size:.75rem;padding:7px 14px" onclick="openKlModal()">+ Novi</button>
+      </div>
+    </div>
+    <div class="frow">
+      <button class="ft on" onclick="klSetFilt('svi',this)">Svi</button>
+      <button class="ft" onclick="klSetFilt('nije',this)">Nije fotografiran</button>
+      <button class="ft" onclick="klSetFilt('jest',this)">Fotografiran</button>
+    </div>
+    <div id="a-kl-list"></div>
+  </div>
+
+  <!-- PLAN SNIMANJA -->
+  <div class="pg" id="a-plan">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="ct" style="margin:0;flex:1">Plan snimanja — Adriatic.hr</div>
+      <button class="btn bp" style="font-size:.75rem;padding:7px 14px;flex-shrink:0" onclick="openPlanModal()">+ Novo</button>
+    </div>
+    <div class="frow">
+      <button class="ft on" onclick="planSetFilt('svi',this)">Svi</button>
+      <button class="ft" onclick="planSetFilt('ceka',this)">Na čekanju</button>
+      <button class="ft" onclick="planSetFilt('obavljeno',this)">Obavljeno</button>
+      <button class="ft" onclick="planSetFilt('otkazano',this)">Otkazano</button>
+    </div>
+    <div id="a-plan-list"></div>
+  </div>
+</div><!-- /aw -->
+
+<!-- ══ APARTMANI ══ -->
+<div id="pw">
+  <!-- KALK -->
+  <div class="pg" id="p-kalk">
+    <div class="card">
+      <div class="ct">Posao</div>
+      <div class="row c3">
+        <div><label>Naziv objekta</label><input type="text" id="p-nm" placeholder="npr. Apartman Sunce"></div>
+        <div><label>Datum</label><input type="date" id="p-dt"></div>
+        <div><label>Lokacija</label><input type="text" id="p-loc" placeholder="Pula, Rovinj…"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">Fotografske kategorije — <span style="color:var(--acc);font-size:.7rem" id="p-kc">0 kat · 0 kom</span></div>
+      <div class="kat-list" id="p-kg"></div>
+      <div class="ib" style="margin-top:10px">ℹ️ Cijena po kategoriji = <strong id="p-cp">10,00 €</strong> (tvoja neto zarada)</div>
+    </div>
+    <div class="card">
+      <div class="ct">Putni troškovi</div>
+      <div class="row c2">
+        <div><label>Km — jedna relacija</label><input type="number" id="p-km" placeholder="0" min="0" oninput="pCheckKm();pCalc()"></div>
+        <div><label>€/km</label><input type="number" id="p-kmr" value="0.40" step="0.01" oninput="pCalc()"></div>
+      </div>
+      <div id="p-km-note" class="ib" style="display:none"></div>
+      <div style="margin-top:9px"><label>Dodatni troškovi (€)</label><input type="number" id="p-ext" placeholder="0.00" min="0" step="0.5" oninput="pCalc()"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Napomena</div>
+      <input type="text" id="p-note" placeholder="Npr. urgentno…">
+    </div>
+    <div class="card">
+      <div class="ct">Obračun — autorsko djelo RH 2026</div>
+      <div class="op" id="p-op"></div>
+      <div class="nb2"><span class="l">UKUPNO PLAĆA NARUČITELJ (Bruto 2)</span><span class="v" id="p-b2">0,00 €</span></div>
+      <div class="nb"><span class="l">NETO — moja zarada</span><span class="v" id="p-neto">0,00 €</span></div>
+      <div class="ib" id="p-pi"></div>
+      <div class="br">
+        <button class="btn bp" onclick="pSave()">💾 Spremi</button>
+        <button class="btn bo" onclick="pReset()">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIST -->
+  <div class="pg" id="p-hist">
+    <div class="nb" style="margin-bottom:10px;border-radius:10px"><span class="l" style="font-size:.9rem">UKUPNO NAPLAĆENO</span><span class="v" id="p-s3" style="font-size:1.7rem">0 €</span></div>
+    <div class="sr"><div class="st"><div class="sv" id="p-s1">0</div><div class="sl">Poslova</div></div><div class="st"><div class="sv" id="p-s2">0 €</div><div class="sl">Ukupno</div></div></div>
+    <div class="unp" id="p-unp" style="display:none"><span class="l">⚠️ Neplaćeno</span><span class="v" id="p-unpv">0 €</span></div>
+    <div class="ib" id="p-pdv-warn" style="display:none;margin-bottom:9px">⚠️ <strong>PDV prag:</strong> Godišnji promet bliži se pragu od 60.000 € — moguća obveza upisa u registar PDV obveznika (od 1.1.2025.)!</div>
+    <div class="card">
+      <div class="ct">Zarada po mjesecima</div>
+      <div class="ch-wrap"><svg id="p-ch" height="110"></svg></div>
+    </div>
+    <div class="card">
+      <div class="ct" style="margin-bottom:9px">Evidencija — Apartmani
+        <div style="margin-left:auto;display:flex;gap:5px">
+          <button class="btn bo" style="font-size:.7rem;padding:4px 10px" onclick="doXLSX('p')">⬇ Excel</button>
+          <button class="btn bo" style="font-size:.7rem;padding:4px 10px" onclick="pEvidencijaPrint()">🖨 Evidencija PDF</button>
+          <button class="btn bo" style="font-size:.7rem;padding:4px 10px" onclick="doJSON('p')">⬇ JSON</button>
+        </div>
+      </div>
+      <div class="frow">
+        <button class="ft on" onclick="setFilt('p','sve',this)">Sve</button>
+        <button class="ft" onclick="setFilt('p','nep',this)">Neplaćeno</button>
+        <button class="ft" onclick="setFilt('p','pl',this)">Plaćeno</button>
+      </div>
+      <div id="p-hl"></div>
+    </div>
+  </div>
+
+  <!-- UGOVOR -->
+  <div class="pg" id="p-ug">
+    <div class="card">
+      <div class="ct">Generiraj ugovor</div>
+      <div class="row c2">
+        <div><label>Naziv objekta</label><input type="text" id="ug-obj" placeholder="npr. Apartman Sunce"></div>
+        <div><label>Datum fotografiranja</label><input type="date" id="ug-dt"></div>
+      </div>
+      <div class="row c2">
+        <div><label>Adresa objekta</label><input type="text" id="ug-adr" placeholder="Ul. i broj, Grad"></div>
+        <div><label>Lokacija</label><input type="text" id="ug-lok" placeholder="Pula"></div>
+      </div>
+
+      <div class="ct" style="margin:14px 0 12px">Vrsta naručitelja</div>
+      <div class="frow" style="margin-bottom:12px">
+        <button class="ft on" id="nt-fiz" onclick="setNarucTip('fiz',this)">Fizička osoba</button>
+        <button class="ft" id="nt-obrt" onclick="setNarucTip('obrt',this)">Obrtnik</button>
+        <button class="ft" id="nt-pvt" onclick="setNarucTip('pvt',this)">Pravna osoba</button>
+      </div>
+
+      <!-- FIZIČKA OSOBA -->
+      <div id="ug-blok-fiz">
+        <div class="row c2">
+          <div><label>Ime i prezime</label><input type="text" id="ug-nime" placeholder="Ime Prezime"></div>
+          <div><label>OIB</label><input type="text" id="ug-noib" placeholder="00000000000"></div>
+        </div>
+        <div><label>Adresa</label><input type="text" id="ug-nadr" placeholder="Ul. i broj, Grad"></div>
+        <div class="wb" style="margin-top:9px">⚠️ Fizička osoba bez djelatnosti: Autor je obvezan sam obračunati porez i doprinose te predati JOPPD <strong>na dan isplate</strong> (ili idući radni dan, čl.76 Pravilnika o JOPPD). <em>Ne "u roku od 8 dana" — rok je isti dan isplate!</em></div>
+      </div>
+
+      <!-- OBRTNIK -->
+      <div id="ug-blok-obrt" style="display:none">
+        <div class="row c2">
+          <div><label>Ime i prezime vlasnika</label><input type="text" id="ug-obrt-ime" placeholder="Ime Prezime"></div>
+          <div><label>Naziv obrta</label><input type="text" id="ug-obrt-nm" placeholder="Obrt za..."></div>
+        </div>
+        <div class="row c2">
+          <div><label>OIB</label><input type="text" id="ug-obrt-oib" placeholder="00000000000"></div>
+          <div><label>MBR (matični br. obrta)</label><input type="text" id="ug-obrt-mbr" placeholder="npr. 12345678"></div>
+        </div>
+        <div><label>Adresa sjedišta</label><input type="text" id="ug-obrt-adr" placeholder="Ul. i broj, Grad"></div>
+        <div class="ib" style="margin-top:9px">ℹ️ Obrtnik kao naručitelj obračunava i uplaćuje MIO, ZO i porez na dohodak u ime Autora te predaje JOPPD. Autoru se isplaćuje <strong>neto iznos</strong> honorara — bruto ne prima Autor.</div>
+      </div>
+
+      <!-- PRAVNA OSOBA -->
+      <div id="ug-blok-pvt" style="display:none">
+        <div class="row c2">
+          <div><label>Naziv tvrtke</label><input type="text" id="ug-pvt-nm" placeholder="d.o.o. / j.d.o.o."></div>
+          <div><label>OIB tvrtke</label><input type="text" id="ug-pvt-oib" placeholder="00000000000"></div>
+        </div>
+        <div class="row c2">
+          <div><label>MBS (matični br. subjekta)</label><input type="text" id="ug-pvt-mbs" placeholder="npr. 080123456"></div>
+          <div><label>Zastupnik (ime i prezime)</label><input type="text" id="ug-pvt-zast" placeholder="Direktor / Prokurista"></div>
+        </div>
+        <div><label>Adresa sjedišta</label><input type="text" id="ug-pvt-adr" placeholder="Ul. i broj, Grad"></div>
+        <div class="ib" style="margin-top:9px">ℹ️ Pravna osoba kao naručitelj obračunava i uplaćuje MIO, ZO i porez na dohodak u ime Autora te predaje JOPPD obrazac.</div>
+      </div>
+
+      <div class="ct" style="margin:14px 0 12px">Honorar</div>
+      <div class="row c3">
+        <div><label>Bruto honorar (€)</label><input type="number" id="ug-br" placeholder="0.00" step="0.01"></div>
+        <div><label>Neto honorar (€)</label><input type="number" id="ug-ne" placeholder="0.00" step="0.01"></div>
+        <div><label>Rok isporuke (dana)</label><input type="number" id="ug-rok" value="7"></div>
+      </div>
+      <div class="br">
+        <button class="btn bp" onclick="ugPovuci()">↙ Povuci iz kalkulatora</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">Pregled</div>
+      <div id="ug-prev" style="font-family:var(--mono);font-size:.73rem;line-height:1.8;white-space:pre-wrap"></div>
+      <div class="br">
+        <button class="btn bp" onclick="ugGen()">🔄 Generiraj</button>
+        <button class="btn bo" onclick="ugPrint()">🖨 Ispiši / PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST -->
+  <div class="pg" id="p-post">
+    <div class="card">
+      <div class="ct">Cijene — Apartmani</div>
+      <div class="setr"><label>Cijena/kategoriji — moja zarada (€)</label><input type="number" id="p-s-cp" value="10.00" step="0.5" onchange="pSaveCfg()"></div>
+      <div class="setr"><label>€/km putni troškovi</label><input type="number" id="p-s-kr" value="0.40" step="0.01" onchange="pSaveCfg()"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Porezne stope — RH 2026</div>
+      <div class="setr"><label>Grad / općina</label><select id="p-s-grad" onchange="settingsGradChange('p-s-grad')"></select></div>
+      <div class="setr"><label>Paušalni izdaci (%) <span class="sbg">ZPD</span></label><input type="number" id="p-s-iz" value="30" step="1" onchange="pSaveCfg()"></div>
+      <div class="ib" style="margin-top:4px;font-size:.72rem">💡 <strong>Fotografska umjetnost:</strong> Uz potvrdu strukovne udruge moguće je primijeniti <strong>55% paušalnih izdataka</strong> (30% normirani + 25% neoporezivi primitak, čl.39. ZPD). Konzultirajte poreznog savjetnika.</div>
+      <div class="setr"><label>MIO doprinos (%) <span class="sbg">ZD</span></label><input type="number" id="p-s-mio" value="10" step="0.5" onchange="pSaveCfg()"></div>
+      <div class="setr"><label>Zdravstveno — naručiteljev trošak (%) <span class="sbg">ZD</span></label><input type="number" id="p-s-zo" value="7.5" step="0.5" onchange="pSaveCfg()"></div>
+      <div class="setr"><label for="p-s-pd" id="p-s-pd-label">Porez na dohodak niža stopa (%) <span class="sbg">JLS</span></label><input type="number" id="p-s-pd" value="22" step="1" onchange="pSaveCfg()"></div>
+      <div class="ib" style="margin-top:8px">ℹ️ Cijena/kat = tvoja neto zarada. Naručitelj snosi MIO+ZO+porez povrh toga.</div>
+      <div class="wb" id="p-umir-warn" style="margin-top:6px;display:none">⚠️ Umirovljenik: doprinosi se obračunavaju i na autorsku naknadu. Konzultacija s računovođom!</div>
+    </div>
+    <div class="card">
+      <div class="ct">Podaci autora (za ugovor)</div>
+      <div class="setr"><label>Ime i prezime</label><input type="text" id="p-a-ime" onchange="saveAutor()"></div>
+      <div class="setr"><label>OIB</label><input type="text" id="p-a-oib" onchange="saveAutor()"></div>
+      <div class="setr"><label>Adresa stanovanja</label><input type="text" id="p-a-adr" onchange="saveAutor()"></div>
+      <div class="setr"><label>IBAN</label><input type="text" id="p-a-iban" onchange="saveAutor()"></div>
+      <div class="setr"><label>Mjesto ugovora</label><input type="text" id="p-a-mj" onchange="saveAutor()"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Kategorije objekta</div>
+      <div id="p-ksl"></div>
+      <div style="display:flex;gap:7px;margin-top:9px;align-items:flex-end">
+        <div style="flex:1"><label>Nova kategorija</label><input type="text" id="p-nk" placeholder="npr. Garaža"></div>
+        <button class="btn bp" onclick="pAddKat()">+ Dodaj</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">⚠️ Opasna zona</div>
+      <button class="btn bd" onclick="clearData('p')">🗑 Obriši povijest Apartmani</button>
+    </div>
+  </div>
+
+  <!-- KLIJENTI -->
+  <div class="pg" id="p-kl">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="ct" style="margin:0;flex:1">Klijenti — Apartmani</div>
+      <button class="btn bp" style="font-size:.75rem;padding:7px 14px;flex-shrink:0" onclick="openKlModal()">+ Novi</button>
+    </div>
+    <div class="frow">
+      <button class="ft on" onclick="klSetFilt('svi',this)">Svi</button>
+      <button class="ft" onclick="klSetFilt('nije',this)">Nije fotografiran</button>
+      <button class="ft" onclick="klSetFilt('jest',this)">Fotografiran</button>
+    </div>
+    <div id="p-kl-list"></div>
+  </div>
+</div><!-- /pw -->
+
+</main>
+
+<!-- CUSTOM CONFIRM MODAL -->
+<div class="conf-modal" id="confModal">
+  <div class="conf-box">
+    <div class="conf-msg" id="confMsg"></div>
+    <div class="conf-btns">
+      <button class="btn bo" id="confNo">Odustani</button>
+      <button class="btn bp" id="confYes">Potvrdi</button>
+    </div>
+  </div>
+</div>
+
+<!-- GDPR OBAVIJEST -->
+<!-- ONBOARDING -->
+<div id="onboardModal">
+  <div class="ob-wrap">
+    <div class="ob-logo">📷 FotoKalk</div>
+    <div class="ob-sub">Kalkulator honorara za fotografe — RH 2026</div>
+    <div class="ob-title">Dobrodošao/la! 👋</div>
+    <div class="ob-desc">Unesite nekoliko osnovnih podataka kako bi aplikacija bila što korisnija. Sve ostaje isključivo na ovom uređaju.</div>
+
+    <div class="ob-field">
+      <label>Ime i prezime <span style="color:var(--mut);font-weight:400">(neobavezno)</span></label>
+      <input type="text" id="ob-ime" placeholder="npr. Marko Horvat" autocomplete="name">
+      <div class="ob-note">💡 Koristit će se za automatsko popunjavanje ugovora u modulu Apartmani.</div>
+    </div>
+
+    <div class="ob-field">
+      <label>Vaš status</label>
+      <select id="ob-status" onchange="onboardStatusChange()">
+        <option value="samostalni">Samostalni umjetnik / obrtnik</option>
+        <option value="zaposlen">Zaposlen kod poslodavca</option>
+        <option value="umirovljenik">Umirovljenik</option>
+      </select>
+      <div class="ob-note" id="ob-status-note"></div>
+    </div>
+
+    <div class="ob-field" id="ob-grad-field">
+      <label>Grad / općina <span style="color:var(--mut);font-weight:400">(za poreznu stopu)</span></label>
+      <select id="ob-grad" onchange="onboardGradChange()">
+      </select>
+      <div class="ob-note" id="ob-grad-note"></div>
+    </div>
+
+    <button class="ob-btn" onclick="onboardSave()">Pokrenuti aplikaciju →</button>
+    <button class="ob-skip" onclick="onboardSkip()">Preskoči, unesite naknadno u postavkama</button>
+  </div>
+</div>
+
+<div class="gdpr-bar" id="gdprBar" style="display:none">
+  ℹ️ Podaci (OIB, IBAN, GPS...) pohranjeni su <strong style="margin:0 3px">isključivo lokalno</strong> na ovom uređaju. Ništa se ne šalje na vanjske poslužitelje.
+  <button class="btn bp" style="font-size:.7rem;padding:4px 10px;flex-shrink:0;margin-left:auto" onclick="gdprOk()">Razumijem</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══ HELPERS ═══
+const g=id=>document.getElementById(id);
+const v=id=>{const e=g(id);return e?e.value:''};
+const m=n=>n.toFixed(2).replace('.',',')+' €';
+const esc=s=>s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'):'';
+const fmtD=s=>{if(!s)return'';if(s.includes('-')){const p=s.split('-');return p[2]+'.'+p[1]+'.'+p[0]}return s};
+const today=id=>{const d=new Date();const el=g(id);if(el)el.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+function toast(msg,err=false){const t=g('toast');t.innerHTML=msg;t.className='toast on'+(err?' err':'');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2500)}
+function genUUID(){if(typeof crypto!=='undefined'&&crypto.randomUUID)return crypto.randomUUID();return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&0x3|0x8)).toString(16)})}
+
+// ═══ THEME ═══
+function toggleTheme(){const l=document.body.classList.toggle('light');localStorage.setItem('fk_theme',l?'l':'d');const k=g('themeKnob');if(k)k.textContent=l?'☀️':'🌙';syncThemeColor();}
+
+// ═══ MODE ═══
+let mode='a';
+function setMode(m2){
+  mode=m2;
+  localStorage.setItem('fk_mode',m2);
+  const isP=m2==='p';
+  g('aw').style.display=isP?'none':'block';
+  g('pw').style.display=isP?'block':'none';
+  g('btnA').classList.toggle('active',!isP);
+  g('btnP').classList.toggle('active',isP);
+  document.body.classList.toggle('apt',isP);
+
+  // Build tabs
+  const tabs=g('tabsBar');tabs.innerHTML='';
+  const IC={plan:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>',kalk:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>',hist:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M3 10h18v4H3z"/><path d="M3 17h18v4H3z"/></svg>',ug:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',kl:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'};
+  const defs=isP?[['p-kalk',IC.kalk,'Kalkulator'],['p-hist',IC.hist,'Povijest'],['p-ug',IC.ug,'Ugovor'],['p-kl',IC.kl,'Klijenti']]:[['a-kalk',IC.kalk,'Kalkulator'],['a-hist',IC.hist,'Povijest'],['a-kl',IC.kl,'Klijenti'],['a-plan',IC.plan,'Plan snimanja']];
+
+  defs.forEach((d,i)=>{const b=document.createElement('button');b.className='tab icon-tab'+(i===0?' active':'');b.innerHTML=d[1];b.title=d[2];b.setAttribute('aria-label',d[2]);b.onclick=()=>showPg(d[0]);tabs.appendChild(b);});
+  g('postBtn').classList.remove('active');
+  // Show first page
+  if(isP){showPgRaw('p-kalk');pBuildKG();pCalc();}
+  else{showPgRaw('a-kalk');aBuildKG();aCalc();posaoPopulatePicker();}
+}
+function showPg(id){
+  const isP=mode==='p';
+  const wrap=isP?'pw':'aw';
+  g(wrap).querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  const pg=g(id);if(pg)pg.classList.add('on');
+  g('tabsBar').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  const tabs=g('tabsBar').querySelectorAll('.tab');
+  const defs=isP?['p-kalk','p-hist','p-ug','p-kl']:['a-kalk','a-hist','a-kl','a-plan'];
+  const idx=defs.indexOf(id);if(idx>=0&&tabs[idx])tabs[idx].classList.add('active');
+  g('postBtn').classList.remove('active');
+  if(id==='a-hist')aRenderHist();
+  if(id==='p-hist')pRenderHist();
+  if(id==='a-post')aLoadCfg();
+  if(id==='p-post'){pLoadCfg();loadAutor();}
+  if(id==='a-kl'||id==='p-kl')klRender();
+  if(id==='a-plan')planRender();
+  if(id==='a-kalk')posaoPopulatePicker();
+}
+function showPgRaw(id){
+  const isP=id.startsWith('p-');
+  const wrap=isP?'pw':'aw';
+  g(wrap).querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  const pg=g(id);if(pg)pg.classList.add('on');
+}
+function openPost(){
+  const pid=mode==='p'?'p-post':'a-post';
+  const pg=g(pid);
+  if(pg&&pg.classList.contains('on')){showPg(mode==='p'?'p-kalk':'a-kalk');g('postBtn').classList.remove('active');}
+  else{showPg(pid);g('postBtn').classList.add('active');}
+}
+
+// ═══ ADRIATIC CONFIG ═══
+const AD={cp:6.5,dp:32.5,kr:.4,kt:5,ot:30,iz:30,mio:10,zo:7.5,pd:22,cats:['Objekt (eksterijor)','Dvorište','Parkiralište','Dnevni boravak','Blagovaona','Kuhinja','Kupatilo','Hodnik','Soba','Terasa','Terasa s pogledom','Balkon','Balkon s pogledom']};
+function aCfg(){const s=localStorage.getItem('fk_a');return s?Object.assign({},AD,JSON.parse(s)):{...AD,cats:[...AD.cats]}}
+function aSaveCfg(){const c=aCfg();c.cp=+v('a-s-cp')||AD.cp;c.dp=+v('a-s-dp')||AD.dp;c.kr=+v('a-s-kr')||AD.kr;c.kt=+v('a-s-kt')||AD.kt;c.ot=+v('a-s-ot')||AD.ot;c.iz=+v('a-s-iz')||AD.iz;c.mio=+v('a-s-mio')||AD.mio;c.zo=+v('a-s-zo')||AD.zo;c.pd=+v('a-s-pd')||AD.pd;safeStore('fk_a',c);aBuildKG();aCalc();toast('Spremljeno')}
+function aLoadCfg(){const c=aCfg();[['a-s-cp',c.cp],['a-s-dp',c.dp],['a-s-kr',c.kr],['a-s-kt',c.kt],['a-s-ot',c.ot],['a-s-iz',c.iz],['a-s-mio',c.mio],['a-s-zo',c.zo],['a-s-pd',c.pd]].forEach(([id,val])=>{const el=g(id);if(el)el.value=val});aKSL()}
+function aKSL(){const c=aCfg();const l=g('a-ksl');if(!l)return;l.innerHTML='';c.cats.forEach((cat,i)=>{const r=document.createElement('div');r.className='setr';r.style.marginBottom='6px';r.innerHTML='<label style="flex:1">'+esc(cat)+'</label>';const b=document.createElement('button');b.className='btn bd';b.style.cssText='padding:3px 8px;font-size:.68rem';b.textContent='✕';b.onclick=()=>{const cc=aCfg();cc.cats.splice(i,1);localStorage.setItem('fk_a',JSON.stringify(cc));aKSL();aBuildKG();toast('Uklonjena')};r.appendChild(b);l.appendChild(r)})}
+function aAddKat(){const inp=g('a-nk');if(!inp||!inp.value.trim())return;const c=aCfg();c.cats.push(inp.value.trim());localStorage.setItem('fk_a',JSON.stringify(c));inp.value='';aKSL();aBuildKG();toast('Dodana')}
+
+// ═══ ADRIATIC STATE ═══
+let aDron=false,aOtkaz=false,aKQ={};
+function togDron(){aDron=!aDron;g('a-dron-sw').classList.toggle('on',aDron);aCalc()}
+function togOtkaz(){aOtkaz=!aOtkaz;g('a-ot-sw').classList.toggle('on',aOtkaz);const n=g('a-ot-note');if(n)n.style.display=aOtkaz?'block':'none';aCalc()}
+
+function aBuildKG(){
+  const c=aCfg();const gr=g('a-kg');if(!gr)return;
+  gr.innerHTML='';
+  c.cats.forEach(cat=>{
+    const qty=aKQ[cat]||0;
+    const row=document.createElement('div');row.className='kat-row'+(qty>0?' on':'');
+    const top=document.createElement('div');top.className='kat-top';
+    const nm=document.createElement('span');nm.className='kat-nm';nm.textContent=cat;
+    const qsp=document.createElement('span');qsp.className='kat-q';qsp.textContent=qty>0?'×'+qty:'';
+    top.appendChild(nm);top.appendChild(qsp);
+    const boxes=document.createElement('div');boxes.className='kat-boxes';
+    for(let i=1;i<=10;i++){
+      const b=document.createElement('div');b.className='kbox'+(i<=qty?' on':'');b.textContent=i<=qty?String(i):'';
+      const nq=(i<=qty&&i===qty)?i-1:i;
+      b.onclick=(function(cc,qq){return function(){aKQ[cc]=qq;if(aKQ[cc]===0)delete aKQ[cc];aBuildKG()}})(cat,nq);
+      boxes.appendChild(b);
+    }
+    row.appendChild(top);row.appendChild(boxes);gr.appendChild(row);
+  });
+  const tot=Object.values(aKQ).reduce((a,x)=>a+x,0);
+  const cats=Object.values(aKQ).filter(x=>x>0).length;
+  const kc=g('a-kc');if(kc)kc.textContent=cats+' kat · '+tot+' kom';
+  const cp=g('a-cp');if(cp)cp.textContent=m(aCfg().cp);
+  aCalc();
+}
+
+function aCalc(){
+  const c=aCfg();
+  const km=+v('a-km')||0,kr=+v('a-kmr')||c.kr,kt=+v('a-kmt')||c.kt;
+  const ext=+v('a-ext')||0,dp2=+v('a-dron-p')||c.dp,ot2=+v('a-ot-n')||c.ot;
+  let bKat=0,bKm=0,bDron=0,bOt=0,bExt=ext;
+  const tot=Object.values(aKQ).reduce((a,x)=>a+x,0);
+  if(!aOtkaz){bKat=tot*c.cp;if(aDron)bDron=dp2;if(km>kt)bKm=km*2*kr;}
+  else{if(km>kt)bKm=km*2*kr;bOt=ot2;}
+  const bruto=bKat+bDron+bKm+bOt+bExt;
+  const iz2=bruto*(c.iz/100);const osnD=bruto-iz2;
+  const mioI=osnD*(c.mio/100);const zoI=osnD*(c.zo/100);
+  const osnP=osnD-mioI;const porI=osnP*(c.pd/100);
+  const neto=bruto-mioI-porI;const b2=bruto+zoI;
+  const op=g('a-op');if(!op)return{bruto,neto,b2,mioI,zoI,porI,bKat,bDron,bKm,bExt,bOt};
+  let rows='';
+  if(bKat>0)rows+=or2('Kategorije ('+tot+' kom. × '+m(c.cp)+')',m(bKat),'');
+  if(bDron>0)rows+=or2('Fotografiranje dronom',m(bDron),'');
+  if(bKm>0)rows+=or2('Putni troškovi ('+(km*2)+' km × '+m(kr)+')',m(bKm),'');
+  if(bExt>0)rows+=or2('Dodatni troškovi',m(bExt),'');
+  if(bOt>0)rows+=or2('Naknada propuštena dobit',m(bOt),'');
+  if(bruto===0)rows+='<div class="or"><span class="l" style="font-style:italic;color:var(--mut)">Odaberi kategorije…</span><span class="v">—</span></div>';
+  op.innerHTML='<div class="os"><div class="ost">Bruto honorar</div>'+rows+'<div class="or hi" style="margin-top:5px;padding-top:5px;border-top:1px solid var(--brd)"><span class="l">BRUTO 1</span><span class="v">'+m(bruto)+'</span></div></div>'
+  +'<div class="os"><div class="ost">Porezni obračun</div>'
+  +'<div class="or"><span class="l">Paušalni izdaci ('+c.iz+'%)</span><span class="v rd">− '+m(iz2)+'</span></div>'
+  +'<div class="or rd"><span class="l">MIO ('+c.mio+'%)</span><span class="v">− '+m(mioI)+'</span></div>'
+  +'<div class="or rd"><span class="l">Porez '+getGrad()+' '+c.pd+'%</span><span class="v">− '+m(porI)+'</span></div>'
+  +'<div class="or bl"><span class="l" style="font-size:.73rem">ZO ('+c.zo+'%) → plaća Naručitelj</span><span class="v" style="font-size:.73rem">+ '+m(zoI)+'</span></div></div>';
+  const nv=g('a-neto');if(nv)nv.textContent=m(neto);
+  const pi=g('a-pi');if(pi){
+    const aGodAll=loadJ('a').reduce((a,j)=>a+j.bruto,0)+bruto;
+    const visaUpozorenje=aGodAll>50400?' ⚠️ <span style="color:var(--red);font-size:.72rem">Bruto prihod može prijeći 60.400 € — razmotri višu poreznu stopu!</span>':'';
+    pi.innerHTML='Bruto '+m(bruto)+' → MIO '+m(mioI)+' → porez '+m(porI)+' → <strong>Neto: '+m(neto)+'</strong>. ZO '+m(zoI)+' na teret adriatic.hr.'+visaUpozorenje;
+  }
+  return{bruto,neto,b2,mioI,zoI,porI,bKat,bDron,bKm,bExt,bOt};
+}
+function or2(l,vv,cls){return'<div class="or '+cls+'"><span class="l">'+l+'</span><span class="v">'+vv+'</span></div>'}
+function aCheckKm(){const km=+v('a-km')||0;const th=+v('a-kmt')||5;const n=g('a-km-note');if(!n)return;if(km>0&&km<=th){n.style.display='block';n.textContent='ℹ️ Unutar '+th+' km — putni troškovi se ne obračunavaju.'}else if(km>th){n.style.display='block';n.textContent='✓ '+km+' km — povratno: '+(km*2)+' km × '+v('a-kmr')+' €'}else n.style.display='none'}
+function aSave(){const nm=(v('a-sifra')||v('a-ime1')+' '+v('a-ime2')).trim();if(!nm){toast('Upiši šifru objekta ili ime vlasnika!',true);return}
+  const r=aCalc();const c=aCfg();
+  const j={id:Date.now(),name:nm,date:fmtD(v('a-dt')),loc:v('a-loc').trim(),note:v('a-note').trim(),sifra:v('a-sifra').trim(),ugsifra:v('a-ugsifra').trim(),ime1:v('a-ime1').trim(),ime2:v('a-ime2').trim(),cats:Object.entries(aKQ).map(([k,vv])=>k+(vv>1?' ×'+vv:'')),dron:aDron,otkaz:aOtkaz,km:+v('a-km')||0,ext:+v('a-ext')||0,...r,paid:false};
+  const jobs=loadJ('a');jobs.unshift(j);safeStore('fk_a_j',jobs);toast('Spremljeno ✓');aRenderHist()}
+function aReset(){aKQ={};aDron=false;aOtkaz=false;g('a-dron-sw').classList.remove('on');g('a-ot-sw').classList.remove('on');const n=g('a-ot-note');if(n)n.style.display='none';const kn=g('a-km-note');if(kn)kn.style.display='none';['a-sifra','a-loc','a-note','a-km','a-ext','a-ugsifra','a-ime1','a-ime2'].forEach(id=>{const e=g(id);if(e)e.value=''});today('a-dt');aBuildKG();aCalc()}
+
+// ═══ ADRIATIC HIST ═══
+let aFilt='sve';
+function setFilt(ns,f,btn){
+  if(ns==='a'){aFilt=f;g('a-hist').querySelectorAll('.ft').forEach(b=>b.classList.remove('on'));btn.classList.add('on');aRenderHist();}
+  else{pFilt=f;g('p-hist').querySelectorAll('.ft').forEach(b=>b.classList.remove('on'));btn.classList.add('on');pRenderHist();}
+}
+function togPaid(id,ns){const jobs=loadJ(ns);const j=jobs.find(x=>String(x.id)===String(id));if(!j)return;j.paid=!j.paid;safeStore(ns==='p'?'fk_p_j':'fk_a_j',jobs);if(ns==='p')pRenderHist();else aRenderHist()}
+function aRenderHist(){
+  const all=loadJ('a');
+  const jobs=aFilt==='pl'?all.filter(j=>j.paid):aFilt==='nep'?all.filter(j=>!j.paid):all;
+  const l=g('a-hl');if(!l)return;
+  const unp=all.filter(j=>!j.paid).reduce((a,j)=>a+j.neto,0);
+  const ub=g('a-unp');if(ub)ub.style.display=unp>0?'flex':'none';const uv=g('a-unpv');if(uv)uv.textContent=m(unp);
+  l.innerHTML=jobs.length?jobs.map(j=>'<div class="hi"><div class="hi-h"><div><div class="hi-nm">'+esc(j.name)+'</div><div class="hi-dt">&#128197; '+j.date+(j.loc?' · '+esc(j.loc):'')+(j.km?' · 🚗 '+j.km+' km':'')+(j.dron?' · 🚁':'')+(j.otkaz?' · ⚠️':'')+' </div></div><div class="hi-am"><div class="hi-br">'+m(j.bruto)+'</div><div class="hi-nt">neto: '+m(j.neto)+'</div></div></div><div class="hi-tags">'+j.cats.map(c=>'<span class="tg">'+esc(c)+'</span>').join('')+'</div>'+(j.note?'<div style="font-size:.7rem;color:var(--mut);margin-top:6px">&#128221; '+esc(j.note)+'</div>':'')+'<div class="hi-ft"><span class="bdg '+(j.paid?'y':'n')+'" data-id="'+j.id+'" data-ns="a">'+(j.paid?'✓ Plaćeno':'✗ Neplaćeno')+'</span><span style="font-size:.65rem;color:var(--mut);font-family:var(--mono);margin-left:auto">MIO:'+m(j.mioI)+' Por:'+m(j.porI)+'</span><button class="btn bd" data-del="'+j.id+'" data-ns="a">✕</button></div></div>').join(''):'<div class="empty">Nema evidentiranih poslova</div>';
+  g('a-s1').textContent=all.length;g('a-s2').textContent=all.reduce((a,j)=>a+j.bruto,0).toFixed(2).replace('.',',')+' €';g('a-s3').textContent=all.reduce((a,j)=>a+j.neto,0).toFixed(2).replace('.',',')+' €';
+  drawChart('a-ch',all,'neto',false);
+  bindHist(l);
+  const aGod=all.filter(j=>j.date&&j.date.split('.').pop()==new Date().getFullYear().toString()).reduce((a,j)=>a+j.bruto,0);const aPdvW=g('a-pdv-warn');if(aPdvW)aPdvW.style.display=aGod>=55000?'block':'none';
+}
+
+// ═══ APARTMANI CONFIG ═══
+const PD={cp:10,kr:.4,iz:30,mio:10,zo:7.5,pd:22,cats:['Objekt (eksterijor)','Dvorište','Parkiralište','Dnevni boravak','Blagovaona','Kuhinja','Kupatilo','Hodnik','Soba','Terasa','Terasa s pogledom','Balkon','Balkon s pogledom']};
+function pCfg(){const s=localStorage.getItem('fk_p');return s?Object.assign({},PD,JSON.parse(s)):{...PD,cats:[...PD.cats]}}
+function pSaveCfg(){const c=pCfg();c.cp=+v('p-s-cp')||PD.cp;c.kr=+v('p-s-kr')||PD.kr;c.iz=+v('p-s-iz')||PD.iz;c.mio=+v('p-s-mio')||PD.mio;c.zo=+v('p-s-zo')||PD.zo;c.pd=+v('p-s-pd')||PD.pd;safeStore('fk_p',c);pBuildKG();pCalc();toast('Spremljeno')}
+function pLoadCfg(){const c=pCfg();[['p-s-cp',c.cp],['p-s-kr',c.kr],['p-s-iz',c.iz],['p-s-mio',c.mio],['p-s-zo',c.zo],['p-s-pd',c.pd]].forEach(([id,val])=>{const el=g(id);if(el)el.value=val});pKSL()}
+function pKSL(){const c=pCfg();const l=g('p-ksl');if(!l)return;l.innerHTML='';c.cats.forEach((cat,i)=>{const r=document.createElement('div');r.className='setr';r.style.marginBottom='6px';r.innerHTML='<label style="flex:1">'+esc(cat)+'</label>';const b=document.createElement('button');b.className='btn bd';b.style.cssText='padding:3px 8px;font-size:.68rem';b.textContent='✕';b.onclick=()=>{const cc=pCfg();cc.cats.splice(i,1);localStorage.setItem('fk_p',JSON.stringify(cc));pKSL();pBuildKG();toast('Uklonjena')};r.appendChild(b);l.appendChild(r)})}
+function pAddKat(){const inp=g('p-nk');if(!inp||!inp.value.trim())return;const c=pCfg();c.cats.push(inp.value.trim());localStorage.setItem('fk_p',JSON.stringify(c));inp.value='';pKSL();pBuildKG();toast('Dodana')}
+
+// ═══ APARTMANI STATE ═══
+let pKQ={},pFilt='sve';
+function pBuildKG(){
+  const c=pCfg();const gr=g('p-kg');if(!gr)return;
+  gr.innerHTML='';
+  c.cats.forEach(cat=>{
+    const qty=pKQ[cat]||0;
+    const row=document.createElement('div');row.className='kat-row'+(qty>0?' on':'');
+    const top=document.createElement('div');top.className='kat-top';
+    const nm=document.createElement('span');nm.className='kat-nm';nm.textContent=cat;
+    const qsp=document.createElement('span');qsp.className='kat-q';qsp.textContent=qty>0?'×'+qty:'';
+    top.appendChild(nm);top.appendChild(qsp);
+    const boxes=document.createElement('div');boxes.className='kat-boxes';
+    for(let i=1;i<=10;i++){
+      const b=document.createElement('div');b.className='kbox'+(i<=qty?' on':'');b.textContent=i<=qty?String(i):'';
+      const nq=(i<=qty&&i===qty)?i-1:i;
+      b.onclick=(function(cc,qq){return function(){pKQ[cc]=qq;if(pKQ[cc]===0)delete pKQ[cc];pBuildKG()}})(cat,nq);
+      boxes.appendChild(b);
+    }
+    row.appendChild(top);row.appendChild(boxes);gr.appendChild(row);
+  });
+  const tot=Object.values(pKQ).reduce((a,x)=>a+x,0);
+  const cats=Object.values(pKQ).filter(x=>x>0).length;
+  const kc=g('p-kc');if(kc)kc.textContent=cats+' kat · '+tot+' kom';
+  const cp=g('p-cp');if(cp)cp.textContent=m(pCfg().cp);
+  pCalc();
+}
+function pCheckKm(){const km=+v('p-km')||0;const n=g('p-km-note');if(!n)return;if(km>0){n.style.display='block';n.textContent='✓ '+km+' km — povratno: '+(km*2)+' km × '+v('p-kmr')+' €'}else n.style.display='none'}
+function pCalc(){
+  const c=pCfg();
+  const km=+v('p-km')||0,kr=+v('p-kmr')||c.kr,ext=+v('p-ext')||0;
+  const tot=Object.values(pKQ).reduce((a,x)=>a+x,0);
+  const bKat=tot*c.cp,bKm=km>0?km*2*kr:0;
+  const neto=bKat+bKm+ext;
+  const iz2=c.iz/100,mr=c.mio/100,pr=c.pd/100;
+  const fakt=1-(1-iz2)*mr-(1-iz2)*(1-mr)*pr;
+  const bruto=neto>0?neto/fakt:0;
+  const izI=bruto*iz2,osnD=bruto-izI,mioI=osnD*mr,zoI=osnD*(c.zo/100),osnP=osnD-mioI,porI=osnP*pr,b2=bruto+zoI;
+  const op=g('p-op');if(!op)return{neto,bruto,b2,mioI,zoI,porI,bKat,bKm,ext};
+  let rows='';
+  if(bKat>0)rows+=or2('Kategorije ('+tot+' kom. × '+m(c.cp)+')',m(bKat),'');
+  if(bKm>0)rows+=or2('Putni troškovi ('+(km*2)+' km × '+m(kr)+')',m(bKm),'');
+  if(ext>0)rows+=or2('Dodatni troškovi',m(ext),'');
+  if(neto===0)rows+='<div class="or"><span class="l" style="font-style:italic;color:var(--mut)">Odaberi kategorije…</span><span class="v">—</span></div>';
+  op.innerHTML='<div class="os"><div class="ost">Moja neto zarada</div>'+rows+'<div class="or hi" style="margin-top:5px;padding-top:5px;border-top:1px solid var(--brd)"><span class="l">NETO ZARADA</span><span class="v">'+m(neto)+'</span></div></div>'
+  +'<div class="os"><div class="ost">Davanja — snosi Naručitelj</div>'
+  +'<div class="or"><span class="l">Bruto 1 (preračunato)</span><span class="v">'+m(bruto)+'</span></div>'
+  +'<div class="or rd"><span class="l">MIO ('+c.mio+'%)</span><span class="v">'+m(mioI)+'</span></div>'
+  +'<div class="or rd"><span class="l">Porez '+c.pd+'%</span><span class="v">'+m(porI)+'</span></div>'
+  +'<div class="or bl"><span class="l">ZO ('+c.zo+'%) — posebno naručiteljev trošak</span><span class="v">'+m(zoI)+'</span></div></div>';
+  const nv=g('p-neto');if(nv)nv.textContent=m(neto);
+  const b2v=g('p-b2');if(b2v)b2v.textContent=m(b2);
+  const pi=g('p-pi');if(pi)pi.innerHTML='Tvoja zarada: <strong>'+m(neto)+'</strong> · Naručitelj ukupno: <strong>'+m(b2)+'</strong>';
+  return{neto,bruto,b2,mioI,zoI,porI,bKat,bKm,ext};
+}
+function pSave(){const nm=v('p-nm').trim();if(!nm){toast('Upiši naziv!',true);return}
+  const r=pCalc();const c=pCfg();
+  const j={id:Date.now(),name:nm,date:fmtD(v('p-dt')),loc:v('p-loc').trim(),note:v('p-note').trim(),cats:Object.entries(pKQ).map(([k,vv])=>k+(vv>1?' ×'+vv:'')),km:+v('p-km')||0,ext:+v('p-ext')||0,...r,paid:false};
+  const jobs=loadJ('p');jobs.unshift(j);safeStore('fk_p_j',jobs);toast('Spremljeno ✓');pRenderHist()}
+function pReset(){pKQ={};['p-nm','p-loc','p-note','p-km','p-ext'].forEach(id=>{const e=g(id);if(e)e.value=''});const n=g('p-km-note');if(n)n.style.display='none';today('p-dt');pBuildKG();pCalc()}
+
+function pRenderHist(){
+  const all=loadJ('p');
+  const jobs=pFilt==='pl'?all.filter(j=>j.paid):pFilt==='nep'?all.filter(j=>!j.paid):all;
+  const l=g('p-hl');if(!l)return;
+  const unp=all.filter(j=>!j.paid).reduce((a,j)=>a+(j.neto||0),0);
+  const ub=g('p-unp');if(ub)ub.style.display=unp>0?'flex':'none';const uv=g('p-unpv');if(uv)uv.textContent=m(unp);
+  l.innerHTML=jobs.length?jobs.map(j=>'<div class="hi"><div class="hi-h"><div><div class="hi-nm">'+esc(j.name)+'</div><div class="hi-dt">&#128197; '+j.date+(j.loc?' · '+esc(j.loc):'')+(j.km?' · 🚗 '+j.km+' km':'')+'</div></div><div class="hi-am"><div class="hi-br">'+m(j.neto||0)+'</div><div class="hi-nt" style="color:var(--pur)">naruč: '+m(j.b2||0)+'</div></div></div><div class="hi-tags">'+j.cats.map(c=>'<span class="tg">'+esc(c)+'</span>').join('')+'</div>'+(j.note?'<div style="font-size:.7rem;color:var(--mut);margin-top:6px">&#128221; '+esc(j.note)+'</div>':'')+'<div class="hi-ft"><span class="bdg '+(j.paid?'y':'n')+'" data-id="'+j.id+'" data-ns="p">'+(j.paid?'✓ Plaćeno':'✗ Neplaćeno')+'</span><button class="btn bd" style="margin-left:auto" data-del="'+j.id+'" data-ns="p">✕</button></div></div>').join(''):'<div class="empty">Nema evidentiranih poslova</div>';
+  g('p-s1').textContent=all.length;g('p-s2').textContent=all.reduce((a,j)=>a+(j.neto||0),0).toFixed(2).replace('.',',')+' €';g('p-s3').textContent=all.reduce((a,j)=>a+(j.neto||0),0).toFixed(2).replace('.',',')+' €';
+  drawChart('p-ch',all,'neto',true);
+  bindHist(l);
+  const pGod=all.filter(j=>j.date&&j.date.split('.').pop()==new Date().getFullYear().toString()).reduce((a,j)=>a+(j.b2||j.bruto||j.neto||0),0);const pPdvW=g('p-pdv-warn');if(pPdvW)pPdvW.style.display=pGod>=55000?'block':'none';
+}
+
+// ═══ EVENT DELEGATION za paid/delete ═══
+function bindHist(container){
+  container.querySelectorAll('.bdg').forEach(b=>{b.onclick=()=>togPaid(b.dataset.id,b.dataset.ns)});
+  container.querySelectorAll('[data-del]').forEach(b=>{b.onclick=()=>customConfirm('Obrisati ovaj zapis?',()=>{const ns=b.dataset.ns;safeStore(ns==='p'?'fk_p_j':'fk_a_j',loadJ(ns).filter(j=>String(j.id)!==String(b.dataset.del)));if(ns==='p')pRenderHist();else aRenderHist();toast('Obrisano')})});
+}
+
+// ═══ CHART ═══
+function drawChart(svgId,jobs,field,isP){
+  const svg=g(svgId);if(!svg)return;
+  const now=new Date();const months=[];
+  for(let i=11;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({k:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),l:['Sij','Velj','Ožu','Tra','Svi','Lip','Srp','Kol','Ruj','Lis','Stu','Pro'][d.getMonth()],v:0})}
+  jobs.forEach(j=>{const val=j[field]||0;if(!j.date)return;const p=j.date.split('.');if(p.length<3)return;const k=p[2]+'-'+p[1].padStart(2,'0');const mo=months.find(x=>x.k===k);if(mo)mo.v+=val});
+  const mx=Math.max(...months.map(x=>x.v),1);
+  const W=300;const H=110;const bw=Math.floor((W-24)/months.length)-2;const gap=(W-months.length*bw)/(months.length+1);
+  const acc=isP?'#34d399':'#f0c040';const mut='#636b80';
+  let out='';
+  months.forEach((mo,i)=>{const x=gap+i*(bw+gap);const bh=mo.v>0?Math.max(4,Math.round(mo.v/mx*65)):2;const y=80-bh;
+    out+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="2" fill="'+(mo.v>0?acc:'#323848')+'"/>';
+    out+='<text x="'+(x+bw/2)+'" y="96" text-anchor="middle" font-size="7" fill="'+mut+'">'+mo.l+'</text>';
+    if(mo.v>0)out+='<text x="'+(x+bw/2)+'" y="'+(y-3)+'" text-anchor="middle" font-size="7" fill="'+acc+'" font-weight="bold">'+Math.round(mo.v)+'</text>';
+  });
+  svg.setAttribute('width','100%');svg.setAttribute('height',H);svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('preserveAspectRatio','xMidYMid meet');svg.innerHTML=out;
+}
+
+// ═══ JOBS ═══
+function loadJ(ns){return JSON.parse(localStorage.getItem(ns==='p'?'fk_p_j':'fk_a_j')||'[]')}
+
+// ═══ EXPORT ═══
+function doXLSX(ns){const jobs=loadJ(ns);if(!jobs.length){toast('Nema podataka',true);return}
+  const isA=ns==='a';const hdr=isA?['Datum','Objekt','Lokacija','Dron','Km','Bruto €','MIO I (7,5%) €','MIO II (2,5%) €','Porez €','ZO €','Neto €','Plaćeno','Napomena']:['Datum','Objekt','Lokacija','Km','Neto €','Bruto2 €','Plaćeno','Napomena'];
+  const rows=[hdr];
+  jobs.forEach(j=>rows.push(isA?[j.date,j.name,j.loc||'',j.dron?'Da':'Ne',j.km||0,j.bruto.toFixed(2),(j.mioI*0.75).toFixed(2),(j.mioI*0.25).toFixed(2),j.porI.toFixed(2),j.zoI.toFixed(2),j.neto.toFixed(2),j.paid?'Da':'Ne',j.note||'']:[j.date,j.name,j.loc||'',j.km||0,(j.neto||0).toFixed(2),(j.b2||0).toFixed(2),j.paid?'Da':'Ne',j.note||'']));
+  rows.push([]);rows.push(isA?['UKUPNO','','','','',jobs.reduce((a,j)=>a+j.bruto,0).toFixed(2),'','','','',jobs.reduce((a,j)=>a+j.neto,0).toFixed(2),'','']:['UKUPNO','','','',jobs.reduce((a,j)=>a+(j.neto||0),0).toFixed(2),'','','']);
+  const d=new Date();const fn='fotokalk_'+(ns==='p'?'apt_':'')+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  if(typeof XLSX!=='undefined'){
+    const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Evidencija');
+    XLSX.writeFile(wb,fn+'.xlsx');toast('Excel preuzet &#10003;');
+  } else {
+    const csv=rows.map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+    const b=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');const _cu=URL.createObjectURL(b);a.href=_cu;
+    a.download=fn+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(_cu),1500);
+    toast('CSV preuzet (xlsx.js nije dostupan offline)');
+  }
+}
+function doJSON(ns){const jobs=loadJ(ns);if(!jobs.length){toast('Nema podataka',true);return}const b=new Blob([JSON.stringify(jobs,null,2)],{type:'application/json'});const a=document.createElement('a');const _jurl=URL.createObjectURL(b);a.href=_jurl;setTimeout(()=>URL.revokeObjectURL(_jurl),1500);const d=new Date();a.download='fotokalk_'+(ns==='p'?'apt_':'')+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json';a.click();toast('JSON preuzet')}
+function aEvidencijaPrint(){
+  // Picker modal
+  const now=new Date();
+  const options=[];
+  for(let i=0;i<24;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const label=['Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'][d.getMonth()]+' '+d.getFullYear();
+    options.push({key,label});
+  }
+  // Build inline picker dialog
+  const existing=document.getElementById('aEvidPickerOverlay');
+  if(existing)existing.remove();
+  const overlay=document.createElement('div');
+  overlay.id='aEvidPickerOverlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`<div style="background:var(--surf);border-radius:12px;padding:22px 20px;width:300px;max-width:90vw">
+    <div style="font-size:.9rem;font-weight:700;margin-bottom:14px">Odaberi mjesec za ispis</div>
+    <select id="aEvidMjPick" style="width:100%;margin-bottom:16px;padding:8px 10px;font-size:.85rem;background:var(--surf2);border:1px solid var(--brd);border-radius:7px;color:var(--txt)">
+      ${options.map(o=>`<option value="${o.key}">${o.label}</option>`).join('')}
+    </select>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn bo" onclick="document.getElementById('aEvidPickerOverlay').remove()">Odustani</button>
+      <button class="btn bp" onclick="aEvidencijaDoPrint(document.getElementById('aEvidMjPick').value);document.getElementById('aEvidPickerOverlay').remove()">🖨 Ispiši</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+}
+
+function aEvidencijaDoPrint(mjesecKey){
+  const [god,mj]=mjesecKey.split('-').map(Number);
+  const mjNaziv=['Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'][mj-1]+' '+god;
+  const sviPoslovi=loadJ('a');
+  // Filter po mjesecu — job.date je u formatu "d.m.yyyy"
+  const poslovi=sviPoslovi.filter(j=>{
+    if(!j.date)return false;
+    const p=j.date.split('.');
+    if(p.length<3)return false;
+    return parseInt(p[1])===mj&&parseInt(p[2])===god;
+  });
+  const now=new Date();
+  const dIspis=now.getDate()+'.'+(now.getMonth()+1)+'.'+now.getFullYear()+'.';
+  const w=window.open('','_blank');
+  if(!w){toast('Dozvoli popup prozore u browseru!',true);return;}
+  const css=`*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:10pt;color:#111;background:#fff}
+.page{max-width:190mm;margin:0 auto;padding:14mm 0}
+.header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8mm;padding-bottom:4mm;border-bottom:2px solid #111}
+.h-title{font-size:13pt;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.h-sub{font-size:9pt;color:#555;margin-top:3pt}
+.h-date{font-size:9pt;color:#555;text-align:right}
+table{width:100%;border-collapse:collapse;margin-bottom:6mm}
+th{background:#111;color:#fff;font-size:8.5pt;font-weight:700;padding:5pt 7pt;text-align:left;letter-spacing:.3px}
+th.r{text-align:right}
+td{font-size:9pt;padding:5pt 7pt;border-bottom:1px solid #e8e8e8;vertical-align:top}
+td.r{text-align:right;font-family:'Courier New',monospace}
+tr:nth-child(even) td{background:#f9f9f9}
+.total-row td{border-top:2px solid #111;border-bottom:none;font-weight:700;font-size:9.5pt;background:#f0f0f0}
+.total-row td.r{font-family:'Courier New',monospace}
+.empty{text-align:center;padding:16pt;color:#888;font-style:italic}
+.foot{font-size:7.5pt;color:#888;text-align:center;padding-top:4mm;border-top:1px solid #ddd}
+@media print{body{margin:0}.page{padding:8mm 0;max-width:100%}}`;
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Evidencija ${mjNaziv}</title><style>${css}</style></head><body><div class="page">`);
+  w.document.write(`<div class="header"><div><div class="h-title">Evidencija — Adriatic.hr</div><div class="h-sub">${mjNaziv}</div></div><div class="h-date">Datum ispisa: ${dIspis}</div></div>`);
+  if(!poslovi.length){
+    w.document.write('<div class="empty">Nema evidentiranih poslova za odabrani mjesec.</div>');
+  } else {
+    w.document.write('<table><thead><tr><th>Rb.</th><th>Datum</th><th>Br. ugovora</th><th>Šifra obj.</th><th>Kat.</th><th class="r">Putni (€)</th><th class="r">Bruto (€)</th><th class="r">Neto (€)</th></tr></thead><tbody>');
+    let ukBruto=0,ukNeto=0,ukKm=0;
+    poslovi.forEach((j,i)=>{
+      const katBroj=j.cats?j.cats.reduce((a,c)=>{const m=c.match(/×(\d+)/);return a+(m?parseInt(m[1]):1)},0):0;
+      const putni=j.bKm||0;
+      // ugsifra fallback: stari zapisi mogu imati 'ug' polje
+      const brUg=j.ugsifra||j.ug||'';
+      ukBruto+=j.bruto||0;ukNeto+=j.neto||0;ukKm+=putni;
+      w.document.write(`<tr>
+        <td>${i+1}.</td>
+        <td>${esc(j.date||'—')}</td>
+        <td>${brUg?esc(brUg):'<span style="color:#bbb;font-style:italic">nije uneseno</span>'}</td>
+        <td>${esc(j.sifra||'—')}</td>
+        <td class="r">${katBroj||'—'}</td>
+        <td class="r">${putni>0?putni.toFixed(2):'—'}</td>
+        <td class="r">${(j.bruto||0).toFixed(2)}</td>
+        <td class="r">${(j.neto||0).toFixed(2)}</td>
+      </tr>`);
+    });
+    w.document.write(`<tr class="total-row">
+      <td colspan="5">UKUPNO — ${poslovi.length} ${poslovi.length===1?'posao':poslovi.length<5?'posla':'poslova'}</td>
+      <td class="r">${ukKm>0?ukKm.toFixed(2):'—'}</td>
+      <td class="r">${ukBruto.toFixed(2)}</td>
+      <td class="r">${ukNeto.toFixed(2)}</td>
+    </tr>`);
+    w.document.write('</tbody></table>');
+  }
+  w.document.write(`<div class="foot">FotoKalk · Adriatic.hr · Autorsko djelo · Zakon o autorskom pravu i srodnim pravima (NN 111/21, izmj. NN 32/24)</div>`);
+  w.document.write('</div></body></html>');
+  w.document.close();setTimeout(()=>w.print(),600);
+}
+
+function clearData(ns){customConfirm('Obrisati cijelu povijest?',()=>{localStorage.removeItem(ns==='p'?'fk_p_j':'fk_a_j');if(ns==='p')pRenderHist();else aRenderHist();toast('Obrisano')})}
+function buildBackupData(){return {
+  v:3,
+  ts:new Date().toISOString(),
+  a_j:loadJ('a'),
+  p_j:loadJ('p'),
+  a_cfg:localStorage.getItem('fk_a'),
+  p_cfg:localStorage.getItem('fk_p'),
+  autor:localStorage.getItem('fk_autor'),
+  a_kl:localStorage.getItem('fk_kl_a'),
+  p_kl:localStorage.getItem('fk_kl_p'),
+  a_plan:localStorage.getItem('fk_plan_a'),
+  // Prethodno nedostajalo:
+  status:localStorage.getItem('fk_status'),
+  grad:localStorage.getItem('fk_grad'),
+  theme:localStorage.getItem('fk_theme'),
+  mode:localStorage.getItem('fk_mode'),
+  gdpr:localStorage.getItem('fk_gdpr'),
+  onboard:localStorage.getItem('fk_onboard')
+}}
+function backupFilename(){const d=new Date();return 'fotokalk_backup_'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json'}
+function markBackupDone(){localStorage.setItem('fk_last_backup',Date.now());checkBackupReminder()}
+function backupAll(){const data=buildBackupData();const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');const _burl=URL.createObjectURL(b);a.href=_burl;setTimeout(()=>URL.revokeObjectURL(_burl),1500);a.download=backupFilename();a.click();markBackupDone();toast('Backup preuzet ✓')}
+function shareBackup(){
+  const data=buildBackupData();
+  const json=JSON.stringify(data,null,2);
+  const filename=backupFilename();
+  const txtName=filename.replace('.json','.txt');
+
+  const doDownload=()=>{
+    const b=new Blob([json],{type:'application/json'});
+    const a=document.createElement('a');
+    const u=URL.createObjectURL(b);
+    a.href=u;a.download=filename;a.click();
+    setTimeout(()=>URL.revokeObjectURL(u),1500);
+    markBackupDone();toast('Backup preuzet ✓');
+  };
+
+  if(!navigator.share||!navigator.canShare){doDownload();return;}
+
+  const file=new File([json],txtName,{type:'text/plain'});
+
+  if(navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:'FotoKalk Backup',text:'FotoKalk backup datoteka'})
+      .then(()=>{markBackupDone();toast('Backup podijeljen ✓');})
+      .catch(e=>{if(e.name!=='AbortError')doDownload();});
+  } else {
+    navigator.share({title:'FotoKalk Backup',text:json})
+      .then(()=>{markBackupDone();toast('Backup podijeljen kao tekst ✓');})
+      .catch(e=>{if(e.name!=='AbortError')doDownload();});
+  }
+}
+function checkBackupReminder(){const last=parseInt(localStorage.getItem('fk_last_backup')||'0');const dismissed=parseInt(localStorage.getItem('fk_backup_dismissed')||'0');const banner=g('backupReminderBanner');if(!banner)return;const now=Date.now();const WEEK=7*24*60*60*1000;if((now-last>WEEK)&&(now-dismissed>WEEK)){const days=last?Math.floor((now-last)/(24*60*60*1000)):null;const el=g('backupDaysAgo');if(el)el.textContent=last?'već '+days+' dana':'još nikad';banner.style.display='flex'}else{banner.style.display='none'}}
+function dismissBackupReminder(){localStorage.setItem('fk_backup_dismissed',Date.now());const b=g('backupReminderBanner');if(b)b.style.display='none'}
+function importAll(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.v){toast('Neispravan format',true);return}
+  if(d.a_j)localStorage.setItem('fk_a_j',JSON.stringify(d.a_j));
+  if(d.p_j)localStorage.setItem('fk_p_j',JSON.stringify(d.p_j));
+  if(d.a_cfg)localStorage.setItem('fk_a',d.a_cfg);
+  if(d.p_cfg)localStorage.setItem('fk_p',d.p_cfg);
+  if(d.autor)localStorage.setItem('fk_autor',d.autor);
+  if(d.a_kl)localStorage.setItem('fk_kl_a',d.a_kl);
+  if(d.p_kl)localStorage.setItem('fk_kl_p',d.p_kl);
+  if(d.a_plan)localStorage.setItem('fk_plan_a',d.a_plan);
+  // v3 polja
+  if(d.status)localStorage.setItem('fk_status',d.status);
+  if(d.grad)localStorage.setItem('fk_grad',d.grad);
+  if(d.theme)localStorage.setItem('fk_theme',d.theme);
+  if(d.mode)localStorage.setItem('fk_mode',d.mode);
+  if(d.gdpr)localStorage.setItem('fk_gdpr',d.gdpr);
+  if(d.onboard)localStorage.setItem('fk_onboard',d.onboard);
+  // Primijeni sve
+  aLoadCfg();pLoadCfg();aBuildKG();pBuildKG();aRenderHist();pRenderHist();klRender();planRender();
+  applyStatus(getStatus());applyGrad(getGrad());
+  if(d.theme){const isL=d.theme==='l';document.body.classList.toggle('light',isL);const k=g('themeKnob');if(k)k.textContent=isL?'☀️':'🌙';syncThemeColor();}
+  toast('Import OK ✓ (v'+(d.v||1)+')')
+}catch(err){toast('Greška pri importu',true)}};r.readAsText(f);e.target.value=''}
+
+// ═══ AUTOR & UGOVOR ═══
+function saveAutor(){const a={ime:v('p-a-ime'),oib:v('p-a-oib'),adr:v('p-a-adr'),iban:v('p-a-iban'),mj:v('p-a-mj')};localStorage.setItem('fk_autor',JSON.stringify(a));toast('Spremljeno')}
+function loadAutor(){const s=localStorage.getItem('fk_autor');if(!s)return{};const a=JSON.parse(s);[['p-a-ime',a.ime],['p-a-oib',a.oib],['p-a-adr',a.adr],['p-a-iban',a.iban],['p-a-mj',a.mj]].forEach(([id,val])=>{const el=g(id);if(el&&val)el.value=val});return a}
+
+let narucTip='fiz';
+function setNarucTip(tip,btn){
+  narucTip=tip;
+  ['fiz','obrt','pvt'].forEach(t=>{
+    const bl=g('ug-blok-'+t);if(bl)bl.style.display=t===tip?'block':'none';
+    const b=g('nt-'+t);if(b)b.classList.toggle('on',t===tip);
+  });
+}
+function ugNarucBlok(){
+  const a=loadAutor();
+  if(narucTip==='fiz'){
+    const ime=v('ug-nime')||'___',oib=v('ug-noib')||'___',adr=v('ug-nadr')||'___';
+    return{ident:'Fizička osoba',
+      naziv:ime,oib,adr,
+      linija1:ime,linija2:'OIB: '+oib,linija3:adr,
+      joppd:'Kako je Naručitelj fizička osoba bez registrirane djelatnosti, Autor je obvezan sam obračunati i uplatiti porez na dohodak i doprinose te predati JOPPD obrazac najkasnije na dan isplate (ili idući radni dan, čl.76 Pravilnika o JOPPD).',
+      isFiz:true,potpis_nm:ime,potpis_oib:'OIB: '+oib};
+  } else if(narucTip==='obrt'){
+    const vlasnik=v('ug-obrt-ime')||'___',nm=v('ug-obrt-nm')||'___',oib=v('ug-obrt-oib')||'___',mbr=v('ug-obrt-mbr')||'___',adr=v('ug-obrt-adr')||'___';
+    return{ident:'Obrtnik',
+      naziv:nm,vlasnik,oib,mbr,adr,
+      linija1:nm,linija2:'vlasnik: '+vlasnik+' · OIB: '+oib,linija3:'MBR: '+mbr+' · '+adr,
+      joppd:'Naručitelj (obrtnik) obvezan je obračunati i uplatiti doprinos za MIO i ZO te porez na dohodak u ime Autora i predati JOPPD obrazac.',
+      isFiz:false,potpis_nm:nm+' (vlasnik: '+vlasnik+')',potpis_oib:'OIB: '+oib};
+  } else {
+    const nm=v('ug-pvt-nm')||'___',oib=v('ug-pvt-oib')||'___',mbs=v('ug-pvt-mbs')||'___',zast=v('ug-pvt-zast')||'___',adr=v('ug-pvt-adr')||'___';
+    return{ident:'Pravna osoba',
+      naziv:nm,oib,mbs,zastupnik:zast,adr,
+      linija1:nm,linija2:'OIB: '+oib+' · MBS: '+mbs,linija3:'zastupnik: '+zast+' · '+adr,
+      joppd:'Naručitelj (pravna osoba) obvezan je obračunati i uplatiti doprinos za MIO i ZO te porez na dohodak u ime Autora i predati JOPPD obrazac.',
+      isFiz:false,potpis_nm:nm+' · zastupa: '+zast,potpis_oib:'OIB: '+oib};
+  }
+}
+
+function ugPovuci(){const nm=g('p-nm');const dt=g('p-dt');const lok=g('p-loc');if(nm&&nm.value)g('ug-obj').value=nm.value;if(dt&&dt.value)g('ug-dt').value=dt.value;if(lok&&lok.value){g('ug-lok').value=lok.value}const r=pCalc();if(r&&r.bruto>0){g('ug-br').value=r.bruto.toFixed(2);g('ug-ne').value=r.neto.toFixed(2)}toast('Povučeno')}
+function slovima(n){const s=['nula','jednog','dva','tri','četiri','pet','šest','sedam','osam','devet','deset','jedanaest','dvanaest','trinaest','četrnaest','petnaest','šesnaest','sedamnaest','osamnaest','devetnaest','dvadeset','dvadeset jednog','dvadeset dva','dvadeset tri','dvadeset četiri','dvadeset pet','dvadeset šest','dvadeset sedam','dvadeset osam','dvadeset devet','trideset'];return(n>=0&&n<s.length)?s[n]:String(n)}
+function ugGen(){
+  const a=loadAutor();const n=ugNarucBlok();
+  const obj=v('ug-obj')||'___',datum=fmtD(v('ug-dt'))||'___',adr=v('ug-adr')||'___',lok=v('ug-lok')||'';
+  const br=parseFloat(v('ug-br'))||0,ne=parseFloat(v('ug-ne'))||0,rok=v('ug-rok')||'7';
+  const d=new Date();const dUg=d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear()+'.';
+  const sep='───────────────────────────────────';
+  const t='UGOVOR O AUTORSKOM DJELU\n(Fotografske usluge — smještajni objekt)'
+    +'\n\nSklopljen u '+(a.mj||'___')+', dana '+dUg
+    +'\n\nNARUČITELJ ('+n.ident+'):\n'+n.linija1+'\n'+n.linija2+'\n'+n.linija3
+    +'\n(u daljnjem tekstu: Naručitelj)'
+    +'\n\nAUTOR:\n'+(a.ime||'___')+'\nOIB: '+(a.oib||'___')+'\n'+(a.adr||'___')
+    +'\n(u daljnjem tekstu: Autor)'
+    +'\n\n'+sep
+    +'\nČlanak 1. — PREDMET UGOVORA'
+    +'\n\nAutor se obvezuje izvršiti profesionalno fotografiranje sljedećeg smještajnog objekta:'
+    +'\n\nNaziv objekta: '+obj
+    +'\nAdresa: '+adr+(lok?', '+lok:'')
+    +'\nDatum fotografiranja: '+datum
+    +'\n\nStranke suglasno utvrđuju da fotografije nastale temeljem ovog Ugovora predstavljaju autorsko djelo iz područja fotografske umjetnosti u smislu čl. 5. st. 1. t. 9. Zakona o autorskom pravu i srodnim pravima (NN 111/21, izmj. NN 32/24).'+'\n\nFotografiranje obuhvaća sve prostorije i vanjske površine objekta dogovorene na dan snimanja. Autor se obvezuje isporučiti minimalno jednu (1) obrađenu fotografiju po snimljenoj kategoriji prostora, u digitalnom formatu JPG visoke rezolucije (minimalno 3000 px na duljoj strani, 300 dpi).'
+    +'\n\nU slučaju da Naručitelj zahtijeva naknadne prerade, retuš ili tehničku obradu fotografija izvan standardnog tijeka isporuke, takav rad podliježe posebnom honoraru koji se dogovara pisanim putem.'
+    +'\n\nFotografije se isporučuju putem elektroničke pošte ili platforme za prijenos datoteka, najkasnije u roku od '+rok+' ('+slovima(parseInt(rok))+') radnih dana od dana fotografiranja.'
+    +'\n\n'+sep
+    +'\nČlanak 2. — PRAVA KORIŠTENJA'
+    +'\n\nAutor ustupa Naručitelju neisključivo pravo korištenja fotografija, ograničeno isključivo na: promociju predmetnog objekta na online platformama (Booking.com, Airbnb i sl.), vlastitoj web stranici i društvenim mrežama.'
+    +'\n\nNaručitelj nema pravo fotografije ustupati trećim osobama, prodavati niti koristiti u komercijalne svrhe izvan gore navedenih okvira bez pisane suglasnosti Autora. Autor zadržava pravo koristiti fotografije u vlastitom portfoliju za prezentaciju autorskog rada.'
+    +'\n\n'+sep
+    +'\nČlanak 3. — HONORAR I PLAĆANJE'
+    +'\n\nBruto honorar: '+br.toFixed(2)+' EUR  ·  Neto isplata Autoru: '+ne.toFixed(2)+' EUR'
+    +'\n\nIsporuka fotografija uvjetovana je prethodnom uplatom honorara na IBAN Autora. Rok isporuke počinje teći od dana zaprimanja uplate.'
+    +'\n\nNaručitelj je obvezan iz bruto honorara obračunati i uplatiti propisane doprinose za mirovinsko osiguranje u ime i za račun Autora, a o svom trošku uplatiti doprinos za zdravstveno osiguranje te predati JOPPD obrazac. Autoru se isplaćuje neto iznos honorara na IBAN: '+(a.iban||'___')+'.'
+    +'\n\n'+sep
+    +'\nČlanak 4. — IZVANREDNE OKOLNOSTI I PRIPREMA OBJEKTA'
+    +'\n\nNaručitelj se obvezuje pripremiti objekt za fotografiranje (čišćenje, urednost prostora, dostupnost svih prostorija) u ugovorenom terminu. Autor nije odgovoran za estetiku prostora u smislu čistoće ili razmještaja namještaja.'
+    +'\n\nU slučaju da su na dan fotografiranja nastupile okolnosti na koje Autor nije mogao utjecati (vremenski uvjeti, nepripremljen ili nedostupan objekt, viša sila), a koje su onemogućile fotografiranje, Autor odmah obavještava Naručitelja. U navedenom slučaju Naručitelj podmiruje Autoru troškove puta ('+pCfg().kr.toFixed(2)+' EUR/km, povratno) te eventualne propratne troškove.'
+    +'\n\n'+sep
+    +'\nČlanak 5. — ZAŠTITA OSOBNIH PODATAKA'
+    +'\n\nPotpisom ovog Ugovora Naručitelj daje Autoru suglasnost za prikupljanje i obradu osobnih podataka navedenih u ovom Ugovoru (ime, prezime, OIB, adresa, kontakt) isključivo u svrhu izvršenja ugovornih obveza i ispunjavanja zakonskih obveza (JOPPD, porezna evidencija). Podaci se neće ustupati trećim osobama bez pisane suglasnosti Naručitelja, osim kada je to zakonski propisano. Naručitelj ima pravo uvida, ispravka i brisanja svojih podataka sukladno Uredbi (EU) 2016/679 (GDPR).'
+    +'\n\n'+sep
+    +'\nČlanak 6. — ZAVRŠNE ODREDBE'
+    +'\n\nNa sve što nije uređeno ovim Ugovorom primjenjuju se odredbe Zakona o autorskom pravu i srodnim pravima (NN 111/21, izmj. NN 32/24), Uredbe (EU) 2016/679 (GDPR) te Zakona o obveznim odnosima. Eventualni sporovi rješavaju se sporazumno, a u suprotnom pred nadležnim sudom prema sjedištu Autora. Ovaj ugovor smatra se valjanim i u digitalnom obliku, a razmjena putem elektroničke pošte predstavlja valjan pristanak obiju strana.'
+    +'\n\nUgovor je sastavljen u dva (2) istovjetna primjerka, od kojih svaka stranka zadržava po jedan. Autor zadržava pravo pohraniti kopiju ugovora u svrhu porezne i autorskopravne evidencije.'
+    +'\n\n'+sep
+    +'\n\nNARUČITELJ:                    AUTOR:'
+    +'\n\n\n________________________       ________________________'
+    +'\n'+n.potpis_nm+'               '+(a.ime||'___')
+    +'\n'+n.potpis_oib+'               OIB: '+(a.oib||'___')
+    +'\n\nDatum potpisa: ________________'
+    +'\n\nTemelj: ZASP (NN 111/21, izmj. NN 32/24) · Uredba (EU) 2016/679 (GDPR) · ZOO';
+  g('ug-prev').textContent=t;toast('Generirano')}
+
+function ugPrint(){
+  ugGen();
+  const autor=loadAutor();
+  const obj=v('ug-obj')||'___';const datum=fmtD(v('ug-dt'))||'___';const adr=v('ug-adr')||'___';const lok=v('ug-lok')||'';
+  const n=ugNarucBlok();
+  const br=parseFloat(v('ug-br'))||0;const ne=parseFloat(v('ug-ne'))||0;const rok=v('ug-rok')||'7';
+  const dd=new Date();const dUg=dd.getDate()+'.'+(dd.getMonth()+1)+'.'+dd.getFullYear()+'.';
+  const w=window.open('','_blank');
+  if(!w){toast('Dozvoli popup prozore u browseru!',true);return;}
+  const css='*{box-sizing:border-box;margin:0;padding:0}body{font-family:Georgia,serif;font-size:11pt;line-height:1.8;color:#111;background:#fff}.page{max-width:170mm;margin:0 auto;padding:18mm 0}h1{text-align:center;font-size:14pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4pt}.sub{text-align:center;font-size:10pt;color:#555;font-style:italic;margin-bottom:18pt}.dr{text-align:center;font-size:10pt;color:#333;margin-bottom:16pt}.stranke{display:flex;gap:10mm;margin-bottom:18pt}.str{flex:1;border:1px solid #ccc;border-radius:4px;padding:9pt 11pt;background:#fafafa}.stnm{font-size:9pt;font-weight:700;text-transform:uppercase;color:#666;margin-bottom:5pt;border-bottom:1px solid #ddd;padding-bottom:3pt}.stim{font-size:11pt;font-weight:700;margin-bottom:3pt}.strd{font-size:9.5pt;color:#333;margin-bottom:2pt}.stoz{font-size:9pt;color:#777;font-style:italic;margin-top:5pt}.cl{margin-bottom:14pt}.clnm{font-size:10pt;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6pt;padding-bottom:2pt;border-bottom:1px solid #ddd}.clp{font-size:10.5pt;margin-bottom:6pt;text-align:justify}.obj{background:#f7f7f7;border:1px solid #ddd;border-radius:4px;padding:7pt 11pt;margin:7pt 0}.objr{font-size:10pt;margin-bottom:2pt}.objr strong{display:inline-block;min-width:45mm;color:#555}.iznbox{background:#f0f0f0;border-left:3px solid #333;padding:7pt 11pt;margin:7pt 0;font-size:10.5pt}.pots{margin-top:26pt;display:flex;gap:14mm}.pot{flex:1}.potnm{font-size:9pt;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:14pt}.potl{border-bottom:1px solid #333;margin-bottom:4pt;height:18pt}.potim{font-size:9.5pt;font-weight:700}.potoib{font-size:9pt;color:#555}.foot{margin-top:22pt;padding-top:7pt;border-top:1px solid #ddd;font-size:8.5pt;color:#777;text-align:center}@media print{body{margin:0}.page{padding:12mm 0;max-width:100%}}';
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ugovor</title><style>'+css+'</style></head><body><div class="page">');
+  w.document.write('<h1>Ugovor o autorskom djelu</h1><div class="sub">(Fotografske usluge — smještajni objekt)</div><div class="dr">Sklopljen u '+(autor.mj||'___')+', dana '+dUg+'</div>');
+  const nStrd3=n.linija3&&n.linija3!=='___'?'<div class="strd">'+esc(n.linija3)+'</div>':'';
+  w.document.write('<div class="stranke"><div class="str"><div class="stnm">Naručitelj ('+esc(n.ident)+')</div><div class="stim">'+esc(n.linija1)+'</div><div class="strd">'+esc(n.linija2)+'</div>'+nStrd3+'<div class="stoz">(u daljnjem tekstu: Naručitelj)</div></div><div class="str"><div class="stnm">Autor</div><div class="stim">'+esc(autor.ime||'___')+'</div><div class="strd">OIB: '+esc(autor.oib||'___')+'</div><div class="strd">'+esc(autor.adr||'___')+'</div><div class="stoz">(u daljnjem tekstu: Autor)</div></div></div>');
+  w.document.write('<div class="cl"><div class="clnm">Članak 1. — Predmet ugovora</div>'
+    +'<div class="clp">Autor se obvezuje izvršiti profesionalno fotografiranje sljedećeg smještajnog objekta:</div>'
+    +'<div class="obj"><div class="objr"><strong>Naziv objekta:</strong> '+esc(obj)+'</div><div class="objr"><strong>Adresa:</strong> '+esc(adr)+(lok?', '+esc(lok):'')+'</div><div class="objr"><strong>Datum fotografiranja:</strong> '+esc(datum)+'</div></div>'
+    +'<div class="clp">Stranke suglasno utvrđuju da fotografije nastale temeljem ovog Ugovora predstavljaju autorsko djelo iz područja fotografske umjetnosti u smislu čl. 5. st. 1. t. 9. Zakona o autorskom pravu i srodnim pravima (NN 111/21, izmj. NN 32/24).</div>'+'<div class="clp">Fotografiranje obuhvaća sve prostorije i vanjske površine objekta dogovorene na dan snimanja. Autor se obvezuje isporučiti minimalno jednu (1) obrađenu fotografiju po snimljenoj kategoriji prostora, u digitalnom formatu JPG visoke rezolucije (minimalno 3000 px na duljoj strani, 300 dpi).</div>'
+    +'<div class="clp">U slučaju da Naručitelj zahtijeva naknadne prerade, retuš ili tehničku obradu fotografija izvan standardnog tijeka isporuke, takav rad podliježe posebnom honoraru koji se dogovara pisanim putem.</div>'
+    +'<div class="clp">Fotografije se isporučuju putem elektroničke pošte ili platforme za prijenos datoteka, najkasnije u roku od <strong>'+rok+' ('+slovima(parseInt(rok))+') radnih dana</strong> od dana fotografiranja.</div>'
+    +'</div>');
+  w.document.write('<div class="cl"><div class="clnm">Članak 2. — Prava korištenja</div>'
+    +'<div class="clp">Autor ustupa Naručitelju neisključivo pravo korištenja fotografija, ograničeno isključivo na: promociju predmetnog objekta na online platformama (Booking.com, Airbnb i sl.), vlastitoj web stranici i društvenim mrežama.</div>'
+    +'<div class="clp">Naručitelj nema pravo fotografije ustupati trećim osobama, prodavati niti koristiti u komercijalne svrhe izvan gore navedenih okvira bez pisane suglasnosti Autora. Autor zadržava pravo koristiti fotografije u vlastitom portfoliju za prezentaciju autorskog rada.</div>'
+    +'</div>');
+  w.document.write('<div class="cl"><div class="clnm">Članak 3. — Honorar i plaćanje</div>'
+    +'<div class="iznbox">Bruto honorar: <strong>'+br.toFixed(2)+' EUR</strong> &nbsp;·&nbsp; Neto isplata Autoru: <strong>'+ne.toFixed(2)+' EUR</strong></div>'
+    +'<div class="clp">Isporuka fotografija uvjetovana je prethodnom uplatom honorara na IBAN Autora. Rok isporuke počinje teći od dana zaprimanja uplate.</div>'
+    +'<div class="clp">Naručitelj je obvezan iz bruto honorara obračunati i uplatiti propisane doprinose za mirovinsko osiguranje u ime i za račun Autora, a o svom trošku uplatiti doprinos za zdravstveno osiguranje te predati JOPPD obrazac. Autoru se isplaćuje neto iznos honorara na IBAN: <strong>'+(autor.iban||'___')+'</strong>.</div>'
+    +'</div>');
+  w.document.write('<div class="cl"><div class="clnm">Članak 4. — Izvanredne okolnosti</div>'
+    +'<div class="clp">Naručitelj se obvezuje pripremiti objekt za fotografiranje (čišćenje, urednost prostora, dostupnost svih prostorija) u ugovorenom terminu. Autor nije odgovoran za estetiku prostora u smislu čistoće ili razmještaja namještaja.</div>'+'<div class="clp">U slučaju da su na dan fotografiranja nastupile okolnosti na koje Autor nije mogao utjecati (vremenski uvjeti, nepripremljen ili nedostupan objekt, viša sila), a koje su onemogućile fotografiranje, Autor odmah obavještava Naručitelja. U navedenom slučaju Naručitelj podmiruje Autoru troškove puta sukladno dogovorenim uvjetima te eventualne propratne troškove.</div>'
+    +'</div>');
+  w.document.write('<div class="cl"><div class="clnm">Članak 5. — Zaštita osobnih podataka</div>'+'<div class="clp">Potpisom ovog Ugovora Naručitelj daje Autoru suglasnost za prikupljanje i obradu osobnih podataka navedenih u ovom Ugovoru (ime, prezime, OIB, adresa, kontakt) isključivo u svrhu izvršenja ugovornih obveza i ispunjavanja zakonskih obveza (JOPPD, porezna evidencija). Podaci se neće ustupati trećim osobama bez pisane suglasnosti Naručitelja, osim kada je to zakonski propisano. Naručitelj ima pravo uvida, ispravka i brisanja svojih podataka sukladno Uredbi (EU) 2016/679 (GDPR).</div>'+'</div>');w.document.write('<div class="cl"><div class="clnm">Članak 6. — Završne odredbe</div>'
+    +'<div class="clp">Na sve što nije uređeno ovim Ugovorom primjenjuju se odredbe Zakona o autorskom pravu i srodnim pravima (NN 111/21, izmj. NN 32/24), Uredbe (EU) 2016/679 (GDPR) te Zakona o obveznim odnosima. Eventualni sporovi rješavaju se sporazumno, a u suprotnom pred nadležnim sudom prema sjedištu Autora. Ovaj ugovor smatra se valjanim i u digitalnom obliku, a razmjena putem elektroničke pošte predstavlja valjan pristanak obiju strana.</div>'
+    +'<div class="clp">Ugovor je sastavljen u dva (2) istovjetna primjerka, od kojih svaka stranka zadržava po jedan. Autor zadržava pravo pohraniti kopiju ugovora u svrhu porezne i autorskopravne evidencije.</div>'
+    +'</div>');
+  w.document.write('<div class="pots"><div class="pot"><div class="potnm">Naručitelj</div><div class="potl"></div><div class="potim">'+esc(n.potpis_nm)+'</div><div class="potoib">'+esc(n.potpis_oib)+'</div></div><div class="pot"><div class="potnm">Autor</div><div class="potl"></div><div class="potim">'+esc(autor.ime||'___')+'</div><div class="potoib">OIB: '+esc(autor.oib||'___')+'</div></div></div>');
+  w.document.write('<div class="foot">Zakon o autorskom pravu i srodnim pravima (NN 111/21, izmj. NN 32/24)</div>');
+  w.document.write('</div></body></html>');
+  w.document.close();setTimeout(()=>w.print(),600);
+}
+
+function pEvidencijaPrint(){
+  const now=new Date();
+  const options=[];
+  for(let i=0;i<24;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const label=['Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'][d.getMonth()]+' '+d.getFullYear();
+    options.push({key,label});
+  }
+  const existing=document.getElementById('pEvidPickerOverlay');
+  if(existing)existing.remove();
+  const overlay=document.createElement('div');
+  overlay.id='pEvidPickerOverlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`<div style="background:var(--surf);border-radius:12px;padding:22px 20px;width:300px;max-width:90vw">
+    <div style="font-size:.9rem;font-weight:700;margin-bottom:14px">Odaberi mjesec za ispis</div>
+    <select id="pEvidMjPick" style="width:100%;margin-bottom:16px;padding:8px 10px;font-size:.85rem;background:var(--surf2);border:1px solid var(--brd);border-radius:7px;color:var(--txt)">
+      ${options.map(o=>'<option value="'+o.key+'">'+o.label+'</option>').join('')}
+    </select>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn bo" onclick="document.getElementById('pEvidPickerOverlay').remove()">Odustani</button>
+      <button class="btn bp" onclick="pEvidencijaDoPrint(document.getElementById('pEvidMjPick').value);document.getElementById('pEvidPickerOverlay').remove()">🖨 Ispiši</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+}
+
+function pEvidencijaDoPrint(mjesecKey){
+  const [god,mj]=mjesecKey.split('-').map(Number);
+  const mjNaziv=['Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'][mj-1]+' '+god;
+  const sviPoslovi=loadJ('p');
+  const poslovi=sviPoslovi.filter(j=>{
+    if(!j.date)return false;
+    const p=j.date.split('.');
+    if(p.length<3)return false;
+    return parseInt(p[1])===mj&&parseInt(p[2])===god;
+  });
+  const now=new Date();
+  const dIspis=now.getDate()+'.'+(now.getMonth()+1)+'.'+now.getFullYear()+'.';
+  const w=window.open('','_blank');
+  if(!w){toast('Dozvoli popup prozore u browseru!',true);return;}
+  const css="*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:10pt;color:#111;background:#fff}.page{max-width:190mm;margin:0 auto;padding:14mm 0}.header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8mm;padding-bottom:4mm;border-bottom:2px solid #111}.h-title{font-size:13pt;font-weight:700;text-transform:uppercase;letter-spacing:.5px}.h-sub{font-size:9pt;color:#555;margin-top:3pt}.h-date{font-size:9pt;color:#555;text-align:right}table{width:100%;border-collapse:collapse;margin-bottom:6mm}th{background:#111;color:#fff;font-size:8.5pt;font-weight:700;padding:5pt 7pt;text-align:left;letter-spacing:.3px}th.r{text-align:right}td{font-size:9pt;padding:5pt 7pt;border-bottom:1px solid #e8e8e8;vertical-align:top}td.r{text-align:right;font-family:'Courier New',monospace}tr:nth-child(even) td{background:#f9f9f9}.total-row td{border-top:2px solid #111;border-bottom:none;font-weight:700;font-size:9.5pt;background:#f0f0f0}.total-row td.r{font-family:'Courier New',monospace}.empty{text-align:center;padding:16pt;color:#888;font-style:italic}.foot{font-size:7.5pt;color:#888;text-align:center;padding-top:4mm;border-top:1px solid #ddd}@media print{body{margin:0}.page{padding:8mm 0;max-width:100%}}";
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Evidencija Apartmani '+mjNaziv+'</title><style>'+css+'</style></head><body><div class="page">');
+  w.document.write('<div class="header"><div><div class="h-title">Evidencija \u2014 Apartmani</div><div class="h-sub">'+mjNaziv+'</div></div><div class="h-date">Datum ispisa: '+dIspis+'</div></div>');
+  if(!poslovi.length){
+    w.document.write('<div class="empty">Nema evidentiranih poslova za odabrani mjesec.</div>');
+  } else {
+    w.document.write('<table><thead><tr><th>Rb.</th><th>Datum</th><th>Naziv objekta</th><th>Lokacija</th><th class="r">Putni (\u20ac)</th><th class="r">Neto (\u20ac)</th><th class="r">Naru\u010d. ukupno (\u20ac)</th></tr></thead><tbody>');
+    var ukNeto=0,ukB2=0,ukKm=0;
+    poslovi.forEach(function(j,i){
+      var putni=j.bKm||0;
+      ukNeto+=j.neto||0;ukB2+=j.b2||0;ukKm+=putni;
+      w.document.write('<tr>'
+        +'<td>'+(i+1)+'.</td>'
+        +'<td>'+esc(j.date||'\u2014')+'</td>'
+        +'<td>'+esc(j.name||'\u2014')+'</td>'
+        +'<td>'+esc(j.loc||'\u2014')+'</td>'
+        +'<td class="r">'+(putni>0?putni.toFixed(2):'\u2014')+'</td>'
+        +'<td class="r">'+(j.neto||0).toFixed(2)+'</td>'
+        +'<td class="r">'+(j.b2||0).toFixed(2)+'</td>'
+        +'</tr>');
+    });
+    var ukLabel='UKUPNO \u2014 '+poslovi.length+' '+(poslovi.length===1?'posao':poslovi.length<5?'posla':'poslova');
+    w.document.write('<tr class="total-row">'
+      +'<td colspan="4">'+ukLabel+'</td>'
+      +'<td class="r">'+(ukKm>0?ukKm.toFixed(2):'\u2014')+'</td>'
+      +'<td class="r">'+ukNeto.toFixed(2)+'</td>'
+      +'<td class="r">'+ukB2.toFixed(2)+'</td>'
+      +'</tr>');
+    w.document.write('</tbody></table>');
+  }
+  w.document.write('<div class="foot">FotoKalk \u00b7 Apartmani \u00b7 Autorsko djelo \u00b7 Zakon o autorskom pravu i srodnim pravima (NN 111/21, izmj. NN 32/24)</div>');
+  w.document.write('</div></body></html>');
+  w.document.close();setTimeout(function(){w.print();},600);
+}
+
+
+// ═══ CSV IMPORT/EXPORT KLIJENTI ═══
+// Format: Ime,Prezime,Telefon,Šifra objekta,Broj ugovora,Adresa,Lat,Lng,Napomena
+function klExportCSV(){
+  const kls=klLoadMigrated();
+  if(!kls.length){toast('Nema klijenata za export',true);return;}
+  const header='Ime;Prezime;Telefon;Sifra objekta;Broj ugovora;Adresa;Lat;Lng;Napomena';
+  const rows=[];
+  kls.forEach(k=>{
+    if(!k.objekti||!k.objekti.length){
+      rows.push([k.ime1||'',k.ime2||'',k.tel||'','','','','','',''].map(csvEsc).join(';'));
+    } else {
+      k.objekti.forEach(obj=>{
+        rows.push([k.ime1||'',k.ime2||'',k.tel||'',obj.nm||'',obj.ug||'',obj.adr||'',obj.lat||'',obj.lng||'',obj.note||''].map(csvEsc).join(';'));
+      });
+    }
+  });
+  const csv=header+'\n'+rows.join('\n');
+  // Encode to Windows-1250 bytes manually
+  const bytes=toWin1250(csv);
+  const blob=new Blob([bytes],{type:'text/csv;charset=windows-1250'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const d=new Date();a.download='klijenti_'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.csv';
+  a.click();toast('CSV exportan ✓');
+}
+function csvEsc(v){
+  if(!v)return'';
+  v=String(v);
+  if(v.includes(';')||v.includes('"')||v.includes('\n'))return'"'+v.replace(/"/g,'""')+'"';
+  return v;
+}
+function toWin1250(str){
+  const map={
+    'Š':0x8A,'š':0x9A,'Ž':0x8E,'ž':0x9E,
+    'Č':0xC8,'č':0xE8,'Ć':0xC6,'ć':0xE6,
+    'Đ':0xD0,'đ':0xF0,
+    'Ä':0xC4,'ä':0xE4,'Ö':0xD6,'ö':0xF6,
+    'Ü':0xDC,'ü':0xFC,'ß':0xDF,
+    // Digraphs — substitute with closest single chars
+    'Lj':'Lj','lj':'lj','LJ':'LJ',
+    'Nj':'Nj','nj':'nj','NJ':'NJ',
+    'Dž':'D\xBE','dž':'d\xBE','DŽ':'D\xBE'
+  };
+  // Pre-process digraphs (multi-char → single replacement string)
+  str=str.replace(/Lj/g,'Lj').replace(/lj/g,'lj').replace(/LJ/g,'LJ')
+         .replace(/Nj/g,'Nj').replace(/nj/g,'nj').replace(/NJ/g,'NJ')
+         .replace(/Dž/g,'Dz').replace(/dž/g,'dz').replace(/DŽ/g,'DZ');
+  const bytes=new Uint8Array(str.length);
+  for(let i=0;i<str.length;i++){
+    const c=str[i];
+    if(map[c]!==undefined)bytes[i]=map[c];
+    else{const code=str.charCodeAt(i);bytes[i]=code<256?code:63;}
+  }
+  return bytes;
+}
+function klImportCSV(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const lines=ev.target.result.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+      if(lines.length<2){toast('CSV je prazan',true);return;}
+      // Skip header row
+      const dataLines=lines[0].toLowerCase().includes('ime')?lines.slice(1):lines;
+      const kls=klLoadMigrated();
+      let added=0,updated=0;
+      dataLines.forEach(line=>{
+        const cols=csvParse(line);
+        if(cols.length<2)return;
+        const ime1=(cols[0]||'').trim();
+        const ime2=(cols[1]||'').trim();
+        const tel=(cols[2]||'').trim();
+        const nm=(cols[3]||'').trim();
+        const ug=(cols[4]||'').trim();
+        const adr=(cols[5]||'').trim();
+        const lat=(cols[6]||'').trim();
+        const lng=(cols[7]||'').trim();
+        const note=(cols[8]||'').trim();
+        if(!ime1&&!ime2&&!nm)return;
+        // Find existing owner by name
+        const imeKey=(ime1+' '+ime2).trim().toLowerCase();
+        let owner=imeKey?kls.find(k=>(k.ime1+' '+k.ime2).trim().toLowerCase()===imeKey):null;
+        const newObj={id:genUUID(),nm,ug,adr,lat,lng,dt:'',stat:'nije',note};
+        if(owner){
+          // Check if objekt with same sifra already exists
+          const exists=nm&&owner.objekti.find(o=>o.nm===nm);
+          if(!exists){owner.objekti.push(newObj);updated++;}
+        } else {
+          kls.push({id:genUUID(),ime1,ime2,tel,objekti:nm||adr?[newObj]:[]});
+          added++;
+        }
+        // Update tel if empty
+        if(owner&&tel&&!owner.tel)owner.tel=tel;
+      });
+      klSaveAll(kls);klRender();posaoPopulatePicker();
+      toast('Uvezeno: '+added+' novih, '+updated+' ažuriranih ✓');
+    }catch(err){toast('Greška pri uvozu: '+err.message,true);}
+  };
+  r.readAsText(file,'UTF-8');
+  e.target.value='';
+}
+function csvParse(line,sep){
+  // Auto-detect separator if not provided
+  if(!sep)sep=line.includes(';')?';':',';
+  const result=[];let cur='';let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(ch===sep&&!inQ){result.push(cur);cur='';}
+    else cur+=ch;
+  }
+  result.push(cur);
+  return result;
+}
+
+// ═══ KLIJENTI ═══
+// Nova struktura: { id, ime1, ime2, tel, objekti:[{id,nm,ug,adr,lat,lng,dt,stat,note}] }
+let klFilt='svi', klEditId=null, klEditObjId=null;
+function klNs(){return mode==='a'?'fk_kl_a':'fk_kl_p'}
+function klLoad(){return JSON.parse(localStorage.getItem(klNs())||'[]')}
+function klSaveAll(arr){localStorage.setItem(klNs(),JSON.stringify(arr))}
+function klSetFilt(f,btn){klFilt=f;const panelId=mode==='a'?'a-kl':'p-kl';g(panelId).querySelectorAll('.ft').forEach(b=>b.classList.remove('on'));btn.classList.add('on');klRender()}
+
+// Migracija stare strukture → nova
+function klMigrate(kls){
+  return kls.map(k=>{
+    if(k.objekti)return k; // već nova struktura
+    return{id:k.id,ime1:k.ime1||'',ime2:k.ime2||'',
+      tel:k.tel||'',
+      objekti:[{id:genUUID(),
+        nm:k.nm||'',ug:k.ug||'',adr:k.adr||'',
+        lat:k.lat||'',lng:k.lng||'',
+        dt:k.dt||'',stat:k.stat||'nije',note:k.note||''}]};
+  });
+}
+function klLoadMigrated(){
+  const raw=klLoad();
+  const migrated=klMigrate(raw);
+  // Spoji duplikate istog vlasnika (Ime+Prezime)
+  const merged=[];
+  migrated.forEach(k=>{
+    const key=(k.ime1+' '+k.ime2).trim().toLowerCase();
+    const existing=merged.find(m=>(m.ime1+' '+m.ime2).trim().toLowerCase()===key&&key!=='');
+    if(existing){
+      // Dodaj objekte koji ne postoje (po šifri)
+      k.objekti.forEach(obj=>{
+        if(!existing.objekti.find(o=>o.nm&&o.nm===obj.nm))
+          existing.objekti.push(obj);
+      });
+    } else {
+      merged.push({...k});
+    }
+  });
+  // Ako je migracija promijenila podatke, spremi
+  if(JSON.stringify(raw)!==JSON.stringify(merged))klSaveAll(merged);
+  return merged;
+}
+
+function klRender(){
+  const listId=mode==='a'?'a-kl-list':'p-kl-list';
+  const l=g(listId);if(!l)return;
+  let kls=klLoadMigrated();
+  // Filter: svi / nije (ima bar 1 nefotografiran) / jest (svi fotografirani)
+  if(klFilt==='nije')kls=kls.filter(k=>k.objekti.some(o=>o.stat==='nije'||o.stat==='otkazano'));
+  if(klFilt==='jest')kls=kls.filter(k=>k.objekti.every(o=>o.stat==='jest'));
+  if(!kls.length){l.innerHTML='<div class="empty">Nema klijenata. Dodaj prvog!</div>';return;}
+  l.innerHTML=kls.map(k=>{
+    const klIme=(k.ime1+' '+k.ime2).trim()||'---';
+    const sviFoto=k.objekti.every(o=>o.stat==='jest');
+    const nijedanFoto=k.objekti.every(o=>o.stat==='nije');
+    const objektiHTML=k.objekti.map(obj=>{
+      const mapsUrl=obj.lat&&obj.lng?'https://maps.google.com/?q='+obj.lat+','+obj.lng:(obj.adr?'https://maps.google.com/?q='+encodeURIComponent(obj.adr):'');
+      return '<div class="kl-obj'+(obj.stat==='jest'?' obj-foto':'')+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:6px">'
+        +'<span style="font-size:.78rem;font-weight:700;font-family:var(--mono);color:var(--acc)">'+(obj.nm?'#'+esc(obj.nm):'—')+'</span>'
+        +(obj.stat==='jest'?'<span style="font-size:.65rem;color:var(--grn);font-weight:700">✓ Fotografiran</span>':obj.stat==='otkazano'?'<span style="font-size:.65rem;color:var(--red);font-weight:700">✗ Otkazano</span>':'<span style="font-size:.65rem;color:var(--mut)">○ Na čekanju</span>')
+        +'</div>'
+        +(obj.ug?'<div class="kl-row" style="font-size:.72rem">📄 '+esc(obj.ug)+'</div>':'')
+        +(obj.adr?'<div class="kl-row" style="font-size:.72rem">📍 <a href="'+mapsUrl+'" target="_blank">'+esc(obj.adr)+'</a></div>':'')
+        +(obj.dt?'<div class="kl-row" style="font-size:.72rem">📅 '+fmtD(obj.dt)+'</div>':'')
+        +(obj.note?'<div class="kl-note" style="font-size:.7rem">📝 '+esc(obj.note)+'</div>':'')
+        +'<div style="display:flex;gap:5px;margin-top:6px">'
+        +'<button class="btn bo" style="font-size:.68rem;padding:3px 9px" onclick="openKlObjModal(&quot;'+k.id+'&quot;,&quot;'+obj.id+'&quot;)">✏️ Uredi</button>'
+        +(mapsUrl?'<a href="'+mapsUrl+'" target="_blank" class="btn bo" style="font-size:.68rem;padding:3px 9px">🗺 Karta</a>':'')
+        +'</div>'
+        +'</div>';
+    }).join('');
+    return '<div class="kl-card">'
+      +'<div class="kl-head">'
+      +'<span class="kl-ime">'+esc(klIme)+'</span>'
+      +(sviFoto?'<span class="kl-status ok">✓ Sve fotografirano</span>':nijedanFoto?'':'<span class="kl-status" style="background:rgba(240,192,64,.12);color:var(--acc);border-color:rgba(240,192,64,.3)">djelomično</span>')
+      +'</div>'
+      +(k.tel?'<div class="kl-row" style="margin-bottom:8px"><a href="tel:'+esc(k.tel)+'">'+esc(k.tel)+'</a></div>':'')
+      +'<div class="kl-objs">'+objektiHTML+'</div>'
+      +'<div class="kl-actions" style="margin-top:10px">'
+      +'<button class="btn bo" style="font-size:.72rem;padding:5px 12px" onclick="openKlModal(&quot;'+k.id+'&quot;)">✏️ Uredi vlasnika</button>'
+      +'<button class="btn bp" style="font-size:.72rem;padding:5px 12px" onclick="openKlObjModal(&quot;'+k.id+'&quot;,null)">+ Objekt</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// Modal za vlasnika (ime, tel)
+function openKlModal(ownerId){
+  klEditId=ownerId||null;
+  klEditObjId=null;
+  g('klModalTitle').textContent=ownerId?'Uredi vlasnika':'Novi klijent';
+  g('klDelBtn').style.display='none';
+  g('klOwnerDelBtn').style.display=ownerId?'inline-flex':'none';
+  // Sakrij objekt sekciju, prikaži samo vlasnik polja
+  g('kl-obj-section').style.display='none';
+  if(ownerId){
+    const k=klLoadMigrated().find(x=>x.id===ownerId)||{};
+    g('kl-ime1').value=k.ime1||''; g('kl-ime2').value=k.ime2||'';
+    g('kl-tel').value=k.tel||'';
+  } else {
+    g('kl-ime1').value=''; g('kl-ime2').value=''; g('kl-tel').value='';
+  }
+  g('klModal').classList.add('on');
+}
+
+// Modal za objekt (nm, ug, adr, lat, lng, dt, stat, note)
+function openKlObjModal(ownerId, objId){
+  klEditId=ownerId;
+  klEditObjId=objId||null;
+  g('klModalTitle').textContent=objId?'Uredi objekt':'Novi objekt';
+  g('klDelBtn').style.display=objId?'inline-flex':'none';
+  g('klOwnerDelBtn').style.display='none';
+  // Prikaži objekt sekciju, popuni vlasnik polja (readonly feel)
+  g('kl-obj-section').style.display='block';
+  const k=klLoadMigrated().find(x=>x.id===ownerId)||{};
+  g('kl-ime1').value=k.ime1||''; g('kl-ime2').value=k.ime2||'';
+  g('kl-tel').value=k.tel||'';
+  if(objId){
+    const obj=k.objekti&&k.objekti.find(o=>o.id===objId)||{};
+    g('kl-nm').value=obj.nm||''; g('kl-ug').value=obj.ug||'';
+    g('kl-adr').value=obj.adr||''; g('kl-lat').value=obj.lat||''; g('kl-lng').value=obj.lng||'';
+    g('kl-dt').value=obj.dt||''; g('kl-stat').value=obj.stat||'nije'; g('kl-note').value=obj.note||'';
+  } else {
+    ['kl-nm','kl-ug','kl-adr','kl-lat','kl-lng','kl-note'].forEach(fid=>{const el=g(fid);if(el)el.value='';});
+    g('kl-stat').value='nije'; today('kl-dt');
+  }
+  g('klModal').classList.add('on');
+}
+
+function klEdit(id){openKlModal(id)}
+function klCancel(){g('klModal').classList.remove('on');klEditId=null;klEditObjId=null}
+
+function klSave(){
+  const kls=klLoadMigrated();
+  if(klEditObjId!==undefined&&klEditId){
+    // Spremi objekt
+    const idx=kls.findIndex(x=>x.id===klEditId);
+    if(idx<0)return;
+    // Ažuriraj i vlasnikove podatke (tel može biti promijenjen)
+    kls[idx].ime1=v('kl-ime1').trim();
+    kls[idx].ime2=v('kl-ime2').trim();
+    kls[idx].tel=v('kl-tel').trim();
+    const obj={id:klEditObjId||String(Date.now()),
+      nm:v('kl-nm').trim(),ug:v('kl-ug').trim(),
+      adr:v('kl-adr').trim(),lat:v('kl-lat')||'',lng:v('kl-lng')||'',
+      dt:v('kl-dt'),stat:v('kl-stat'),note:v('kl-note').trim()};
+    if(klEditObjId){
+      const oi=kls[idx].objekti.findIndex(o=>o.id===klEditObjId);
+      if(oi>=0)kls[idx].objekti[oi]=obj;else kls[idx].objekti.unshift(obj);
+    } else {
+      kls[idx].objekti.unshift(obj);
+    }
+    klSaveAll(kls);klCancel();klRender();toast('Objekt spremljen ✓');
+  } else {
+    // Spremi vlasnika (novi ili edit)
+    const ime1=v('kl-ime1').trim();const ime2=v('kl-ime2').trim();
+    if(!ime1&&!ime2){toast('Upiši ime vlasnika!',true);return;}
+    if(klEditId){
+      const idx=kls.findIndex(x=>x.id===klEditId);
+      if(idx>=0){kls[idx].ime1=ime1;kls[idx].ime2=ime2;kls[idx].tel=v('kl-tel').trim();}
+      klSaveAll(kls);klCancel();klRender();toast('Vlasnik ažuriran ✓');
+    } else {
+      const k={id:genUUID(),ime1,ime2,tel:v('kl-tel').trim(),objekti:[]};
+      kls.unshift(k);klSaveAll(kls);
+      // Odmah otvori modal za dodavanje prvog objekta
+      klCancel();
+      setTimeout(()=>openKlObjModal(k.id,null),100);
+      toast('Vlasnik kreiran — dodaj objekt');
+    }
+  }
+}
+
+function klObjDelete(){
+  customConfirm('Obrisati objekt?',()=>{
+    const kls=klLoadMigrated();
+    const idx=kls.findIndex(x=>x.id===klEditId);if(idx<0)return;
+    kls[idx].objekti=kls[idx].objekti.filter(o=>o.id!==klEditObjId);
+    if(!kls[idx].objekti.length)kls.splice(idx,1);
+    klSaveAll(kls);klCancel();klRender();toast('Objekt obrisan');
+  });
+}
+function klOwnerDelete(){
+  customConfirm('Obrisati vlasnika i sve njegove objekte?',()=>{
+    klSaveAll(klLoadMigrated().filter(x=>x.id!==klEditId));
+    klCancel();klRender();toast('Vlasnik obrisan');
+  });
+}
+
+// Close modal on bg click
+document.addEventListener('click',e=>{if(e.target===g('klModal'))klCancel()});
+
+// Posao ← odabrani klijent — value je "ownerId::objId"
+function posaoFromKlijent(val){
+  if(!val)return;
+  const[ownerId,objId]=val.split('::');
+  const kls=klLoadMigrated();
+  const k=kls.find(x=>x.id===ownerId);if(!k)return;
+  const obj=k.objekti&&k.objekti.find(o=>o.id===objId)||{};
+  const e1=g('a-ime1');const e2=g('a-ime2');const es=g('a-sifra');const el=g('a-loc');const ed=g('a-dt');const eu=g('a-ugsifra');
+  if(e1)e1.value=k.ime1||''; if(e2)e2.value=k.ime2||'';
+  if(es)es.value=obj.nm||''; if(el)el.value=obj.adr||'';
+  if(ed&&obj.dt)ed.value=obj.dt; if(eu)eu.value=obj.ug||'';
+  g('a-kl-pick').value='';
+  toast('Popunjeno iz Klijenta');}
+
+function posaoPopulatePicker(){
+  const sel=g('a-kl-pick');if(!sel)return;
+  const kls=klLoadMigrated();
+  sel.innerHTML='<option value="">&#8681; Iz Klijenta...</option>';
+  kls.forEach(k=>{
+    const vlasnik=(k.ime1+' '+k.ime2).trim()||'---';
+    // Prikaži samo objekte koji NISU fotografirani ni otkazani
+    const aktivni=(k.objekti||[]).filter(obj=>obj.stat==='nije');
+    if(!k.objekti||!k.objekti.length){
+      const opt=document.createElement('option');
+      opt.value=k.id+'::';opt.textContent=vlasnik;sel.appendChild(opt);
+    } else {
+      aktivni.forEach(obj=>{
+        const opt=document.createElement('option');
+        opt.value=k.id+'::'+obj.id;
+        opt.textContent=vlasnik+(obj.nm?' — #'+obj.nm:'');
+        sel.appendChild(opt);
+      });
+    }
+  });
+}
+
+
+
+// ═══ PLAN SNIMANJA ═══
+let planFilt='svi', planEditId=null;
+function planLoad(){return JSON.parse(localStorage.getItem('fk_plan_a')||'[]')}
+function planSaveAll(arr){localStorage.setItem('fk_plan_a',JSON.stringify(arr))}
+function planSetFilt(f,btn){planFilt=f;g('a-plan').querySelectorAll('.ft').forEach(b=>b.classList.remove('on'));btn.classList.add('on');planRender()}
+function planStatLabel(s){return s==='obavljeno'?'&#10003; Obavljeno':s==='otkazano'?'&#10007; Otkazano':'&#9711; Na &#269;ekanju'}
+function planRender(){
+  const l=g('a-plan-list');if(!l)return;
+  let plans=planLoad();
+  // Sort by date ascending
+  plans.sort((a,b)=>{
+    if(!a.dt&&!b.dt)return 0;
+    if(!a.dt)return 1;  // bez datuma idu na kraj
+    if(!b.dt)return -1;
+    return a.dt>b.dt?1:-1;
+  });
+  if(planFilt!=='svi')plans=plans.filter(p=>p.stat===planFilt);
+  if(!plans.length){l.innerHTML='<div class="empty">Nema termina. Dodaj prvi!</div>';return;}
+  l.innerHTML=plans.map(p=>{
+    const mapsUrl=p.lat&&p.lng?'https://maps.google.com/?q='+p.lat+','+p.lng:(p.adr?'https://maps.google.com/?q='+encodeURIComponent(p.adr):'');
+    const ime=(p.ime1+' '+p.ime2).trim()||'---';
+    return '<div class="plan-card '+p.stat+(p.dt?'':' nodatum')+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+      +(p.dt?'<div class="plan-dt">&#128197; '+fmtD(p.dt)+'</div>':'<div class="plan-dt" style="color:var(--mut);font-weight:400;font-size:.82rem">&#128197; datum nije dogovoren</div>')
+      +'<span class="plan-stat '+p.stat+'">'+planStatLabel(p.stat)+'</span>'
+      +'</div>'
+      +(p.sifra?'<div class="kl-row">&#35; Šifra: <strong>'+esc(p.sifra)+'</strong></div>':'')
+      +(p.ug?'<div class="kl-row">&#128196; Ugovor: <strong>'+esc(p.ug)+'</strong></div>':'')
+      +'<div class="kl-row"><strong>'+esc(ime)+'</strong></div>'
+      +(p.tel?'<div class="kl-row">&#128222; <a href="tel:'+esc(p.tel)+'">'+esc(p.tel)+'</a></div>':'')
+      +(p.adr?'<div class="kl-row">&#128205; <a href="'+mapsUrl+'" target="_blank">'+esc(p.adr)+'</a></div>':'')
+      +(p.lat&&p.lng?'<div class="kl-row">&#128752; <a href="'+mapsUrl+'" target="_blank">'+p.lat+', '+p.lng+'</a></div>':'')
+      +(p.note?'<div class="kl-note">&#128221; '+esc(p.note)+'</div>':'')
+      +'<div class="kl-actions">'
+      +'<button class="btn bo" style="font-size:1.1rem;padding:6px 11px" onclick="openPlanModal(\''+p.id+'\')">&#9998;</button>'
+      +(p.stat!=='obavljeno'?'<button class="btn bp" style="font-size:1.1rem;padding:6px 11px" onclick="planQuickStat(\''+p.id+'\',\'obavljeno\')">&#10003;</button>':'')
+      +(p.stat==='ceka'?'<button class="btn bd" style="font-size:1.1rem;padding:6px 11px" onclick="planQuickStat(\''+p.id+'\',\'otkazano\')">&#10007;</button>':'')
+      +(p.stat!=='ceka'?'<button class="btn bo" style="font-size:1.1rem;padding:6px 11px;border-color:var(--acc);color:var(--acc)" onclick="planQuickStat(\''+p.id+'\',\'ceka\')">&#8617;</button>':'')
+      +(mapsUrl?'<a href="'+mapsUrl+'" target="_blank" class="btn bo" style="font-size:1.1rem;padding:6px 11px">&#128506;</a>':'')
+      +(p.lat&&p.lng?'<a href="https://waze.com/ul?ll='+p.lat+','+p.lng+'&navigate=yes" target="_blank" class="btn bo" style="font-size:1rem;padding:6px 10px;font-weight:700;color:#05c8f7;border-color:#05c8f7" title="Otvori u Waze">W</a>':p.adr?'<a href="https://waze.com/ul?q='+encodeURIComponent(p.adr)+'&navigate=yes" target="_blank" class="btn bo" style="font-size:1rem;padding:6px 10px;font-weight:700;color:#05c8f7;border-color:#05c8f7" title="Otvori u Waze">W</a>':'')
+      +(p.dt?'<a href="'+gcalUrl(p)+'" target="_blank" class="btn bo" style="font-size:1.1rem;padding:6px 11px;border-color:#4285f4;color:#4285f4" title="Dodaj u Google kalendar">&#128197;</a>':'')
+      +'</div></div></div>';
+  }).join('');
+}
+function planQuickStat(id,stat){
+  const plans=planLoad();const p=plans.find(x=>x.id===id);if(!p)return;
+  p.stat=stat;planSaveAll(plans);planRender();
+  // Sync to klijenti - find matching objekt by sifra or vlasnik name
+  planSyncKlijent(p,stat);
+  toast(stat==='obavljeno'?'Označeno kao obavljeno':stat==='otkazano'?'Označeno kao otkazano':'↩ Vraćeno na čekanje');
+}
+function planSyncKlijent(p,stat){
+  const kls=klLoadMigrated();
+  const imeKey=(p.ime1+' '+p.ime2).trim().toLowerCase();
+  let changed=false;
+  const klStat=stat==='obavljeno'?'jest':stat==='otkazano'?'otkazano':'nije';
+  for(const k of kls){
+    // Match by vlasnik name
+    const kIme=(k.ime1+' '+k.ime2).trim().toLowerCase();
+    if(imeKey&&kIme&&kIme===imeKey){
+      for(const obj of k.objekti){
+        // Match by sifra if available, otherwise match first objekt
+        if(!p.sifra||obj.nm===p.sifra){
+          obj.stat=klStat;changed=true;break;
+        }
+      }
+    }
+  }
+  if(changed){klSaveAll(kls);if(g('a-kl-list'))klRender();}
+}
+function openPlanModal(id){
+  planEditId=id||null;
+  g('planModalTitle').textContent=id?'Uredi termin':'Novi termin snimanja';
+  g('planDelBtn').style.display=id?'inline-flex':'none';
+  if(id){
+    const p=planLoad().find(x=>x.id===id)||{};
+    g('pl-dt').value=p.dt||''; g('pl-sifra').value=p.sifra||'';
+    g('pl-ime1').value=p.ime1||''; g('pl-ime2').value=p.ime2||'';
+    g('pl-tel').value=p.tel||''; g('pl-ug').value=p.ug||'';
+    g('pl-adr').value=p.adr||'';
+    g('pl-lat').value=p.lat||''; g('pl-lng').value=p.lng||'';
+    g('pl-stat').value=p.stat||'ceka'; g('pl-note').value=p.note||'';
+  } else {
+    ['pl-sifra','pl-ime1','pl-ime2','pl-tel','pl-ug','pl-adr','pl-lat','pl-lng','pl-note'].forEach(fid=>g(fid).value='');
+    g('pl-stat').value='ceka'; today('pl-dt');
+  }
+  g('planModal').classList.add('on');
+}
+function planCancel(){g('planModal').classList.remove('on');planEditId=null}
+function gcalUrl(p){
+  if(!p.dt)return '';
+  // Date format: YYYYMMDD
+  const d=p.dt.replace(/-/g,'');
+  const ime=(p.ime1+' '+p.ime2).trim();
+  const title=encodeURIComponent('Snimanje'+(p.sifra?' #'+p.sifra:'')+(ime?' — '+ime:''));
+  const details=encodeURIComponent(
+    (p.sifra?'Šifra: '+p.sifra+'\n':'')
+    +(p.ug?'Ugovor: '+p.ug+'\n':'')
+    +(ime?'Vlasnik: '+ime+'\n':'')
+    +(p.tel?'Tel: '+p.tel+'\n':'')
+    +(p.note?'Napomena: '+p.note:'')
+  );
+  const loc=encodeURIComponent(p.adr||(p.lat&&p.lng?p.lat+','+p.lng:''));
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+    +'&text='+title
+    +'&dates='+d+'T080000%2F'+d+'T180000'
+    +'&details='+details
+    +(loc?'&location='+loc:'')
+    +'&sf=true&output=xml';
+}
+function planSave(){
+  const dt=v('pl-dt');
+  const plans=planLoad();
+  const isNew=!planEditId;
+  const obj={id:planEditId||String(Date.now()),dt,sifra:v('pl-sifra').trim(),
+    ime1:v('pl-ime1').trim(),ime2:v('pl-ime2').trim(),tel:v('pl-tel').trim(),
+    ug:v('pl-ug').trim(),
+    adr:v('pl-adr').trim(),lat:v('pl-lat')||'',lng:v('pl-lng')||'',
+    stat:v('pl-stat'),note:v('pl-note').trim()};
+  if(planEditId){const idx=plans.findIndex(x=>x.id===planEditId);if(idx>=0)plans[idx]=obj;else plans.unshift(obj);}
+  else plans.unshift(obj);
+  planSaveAll(plans);
+  if(isNew)planAutoKlijent(obj);
+  planCancel();planRender();
+  toast('Termin spremljen &#10003;');
+  if(obj.dt){
+    const cal=gcalUrl(obj);
+    customConfirm('Dodati termin u Google kalendar?',()=>window.open(cal,'_blank'));
+  }
+}
+
+// Auto-kreira klijenta pri novom planu (ne pri editiranju)
+function planAutoKlijent(p){
+  const kls=klLoadMigrated();
+  const noviObj={id:genUUID(),
+    nm:p.sifra||'',ug:p.ug||'',
+    adr:p.adr||'',lat:p.lat||'',lng:p.lng||'',
+    dt:p.dt||'',stat:'nije',note:''};
+  // Ako ima šifru — provjeri postoji li već objekt s tom šifrom
+  if(p.sifra){
+    for(const k of kls){
+      if(k.objekti&&k.objekti.find(o=>o.nm===p.sifra)){
+        toast('Termin spremljen · klijent već postoji &#10003;');klRender();return;
+      }
+    }
+  }
+  // Traži vlasnika po Ime+Prezime
+  const imeKey=(p.ime1+' '+p.ime2).trim().toLowerCase();
+  const existing=imeKey?kls.find(k=>(k.ime1+' '+k.ime2).trim().toLowerCase()===imeKey):null;
+  if(existing){
+    // Dodaj objekt postojećem vlasniku
+    existing.objekti.unshift(noviObj);
+    klSaveAll(kls);klRender();
+    toast('Termin spremljen · objekt dodan klijentu &#10003;');
+  } else {
+    // Novi vlasnik + objekt
+    const kl={id:genUUID(),
+      ime1:p.ime1||'',ime2:p.ime2||'',
+      tel:p.tel||'',objekti:[noviObj]};
+    kls.unshift(kl);klSaveAll(kls);klRender();
+    toast('Termin spremljen · klijent kreiran &#10003;');
+  }
+}
+function planDelete(){
+  customConfirm('Obrisati termin?',()=>{
+    planSaveAll(planLoad().filter(x=>x.id!==planEditId));
+    planCancel();planRender();toast('Obrisano');
+  });
+}
+document.addEventListener('click',e=>{
+  if(e.target===g('klModal'))klCancel();
+  if(e.target===g('planModal'))planCancel();
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if(g('klModal')?.classList.contains('on'))klCancel();
+  if(g('planModal')?.classList.contains('on'))planCancel();
+  if(g('confModal')?.classList.contains('on'))g('confModal').classList.remove('on');
+});
+
+// ═══ SAFE STORAGE ═══
+function safeStore(key, val) {
+  try {
+    const s = typeof val === 'string' ? val : JSON.stringify(val);
+    localStorage.setItem(key, s);
+    return true;
+  } catch(e) {
+    if(e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22) {
+      toast('⚠️ Nema prostora na uređaju! Napravite backup i obrišite stare podatke.', true);
+    } else {
+      toast('Greška pri pohrani podataka.', true);
+    }
+    return false;
+  }
+}
+
+// ═══ CUSTOM CONFIRM DIALOG ═══
+let _confCb = null;
+function customConfirm(msg, onYes, onNo) {
+  const modal = g('confModal');
+  const msgEl = g('confMsg');
+  if (!modal || !msgEl) {
+    // fallback na nativni confirm ako modal nije dostupan
+    if (window.confirm(msg)) { if (onYes) onYes(); } else { if (onNo) onNo(); }
+    return;
+  }
+  msgEl.textContent = msg;
+  g('confYes').onclick = () => { modal.classList.remove('on'); if (onYes) onYes(); };
+  g('confNo').onclick  = () => { modal.classList.remove('on'); if (onNo) onNo(); };
+  modal.classList.add('on');
+}
+// Zatvori na klik izvan boxa
+document.addEventListener('click', e => {
+  if (e.target && e.target.id === 'confModal') g('confModal').classList.remove('on');
+});
+
+// ═══ GDPR OBAVIJEST ═══
+function gdprOk() {
+  localStorage.setItem('fk_gdpr', '1');
+  const b = g('gdprBar'); if (b) b.style.display = 'none';
+}
+
+// ═══ ONBOARDING ═══
+const STATUS_NOTES = {
+  samostalni: '',
+  zaposlen: '⚠️ Kao zaposlena osoba koja prima autorsku naknadu, doprinose obračunava naručitelj. Savjetujte se s računovođom o eventualnom drugom dohotku.',
+  umirovljenik: '⚠️ Umirovljenici plaćaju doprinose i na autorsku naknadu. Obavezno konzultirajte računovođu!'
+};
+function onboardStatusChange(){
+  const s=g('ob-status')?.value;
+  const n=g('ob-status-note');
+  if(!n)return;
+  n.textContent=STATUS_NOTES[s]||'';
+  n.className='ob-note'+(s==='umirovljenik'?' warn':'');
+}
+function onboardGradChange(){
+  const grad=g('ob-grad')?.value||'';
+  const n=g('ob-grad-note');
+  if(!grad||!n)return;
+  const stopa=getGradStopa(grad);
+  n.textContent='Niža stopa poreza na dohodak: '+stopa.niza+'% · Viša: '+stopa.visa+'%';
+}
+function onboardPopulateGrad(){
+  const sel=g('ob-grad');
+  if(!sel)return;
+  const saved=getGrad();
+  sel.innerHTML='';
+  SVI_GRADOVI.forEach(g2=>{
+    const o=document.createElement('option');
+    o.value=g2;o.textContent=g2;
+    if(g2===saved||g2.replace('Pula-Pola','Pula')===saved)o.selected=true;
+    sel.appendChild(o);
+  });
+  onboardGradChange();
+}
+function onboardSave(){
+  const ime=(g('ob-ime')?.value||'').trim();
+  const status=g('ob-status')?.value||'samostalni';
+  const grad=g('ob-grad')?.value||'Pula';
+  localStorage.setItem('fk_status',status);
+  localStorage.setItem('fk_grad',grad);
+  if(ime){
+    const a=JSON.parse(localStorage.getItem('fk_autor')||'{}');
+    a.ime=ime;
+    localStorage.setItem('fk_autor',JSON.stringify(a));
+    const el=g('p-a-ime');if(el)el.value=ime;
+  }
+  localStorage.setItem('fk_onboard','1');
+  g('onboardModal').classList.remove('on');
+  applyStatus(status);
+  applyGrad(grad);
+  if(!localStorage.getItem('fk_gdpr')){const b=g('gdprBar');if(b)b.style.display='flex';}
+}
+function onboardSkip(){
+  localStorage.setItem('fk_onboard','1');
+  localStorage.setItem('fk_status','samostalni');
+  localStorage.setItem('fk_grad','Pula');
+  g('onboardModal').classList.remove('on');
+  if(!localStorage.getItem('fk_gdpr')){const b=g('gdprBar');if(b)b.style.display='flex';}
+}
+function applyStatus(status){
+  // Prikaži/sakrij umirovljenik upozorenje u postavkama
+  const w=g('a-umir-warn');
+  if(w)w.style.display=status==='umirovljenik'?'block':'none';
+  const w2=g('p-umir-warn');
+  if(w2)w2.style.display=status==='umirovljenik'?'block':'none';
+  // Sync settings select
+  const sel=g('settings-status');
+  if(sel)sel.value=status;
+  // Status note in settings
+  const note=g('settings-status-note');
+  if(note){
+    const msgs={
+      samostalni:'',
+      zaposlen:'⚠️ Kao zaposlena osoba koja prima autorsku naknadu, doprinose obračunava naručitelj. Savjetujte se s računovođom o drugom dohotku.',
+      umirovljenik:'⚠️ Umirovljenici plaćaju doprinose i na autorsku naknadu. Obavezno konzultirajte računovođu!'
+    };
+    note.textContent=msgs[status]||'';
+    note.style.display=status!=='samostalni'?'block':'none';
+  }
+}
+function settingsStatusChange(){
+  const status=g('settings-status')?.value||'samostalni';
+  localStorage.setItem('fk_status',status);
+  applyStatus(status);
+  toast('Status spremljen');
+}
+function getStatus(){return localStorage.getItem('fk_status')||'samostalni'}
+
+// ═══ BAZA GRADOVA / POREZNE STOPE 2026 ═══
+// Gradovi s posebnim stopama (niža/viša). Ostali: 20/30 (zakonski default)
+const GRADOVI_STOPE = {
+  'Beli Manastir':    {niza:21, visa:27},
+  'Civljane':         {niza:15, visa:25},
+  'Daruvar':          {niza:21, visa:30},
+  'Ivanić-Grad':      {niza:21, visa:31},
+  'Nova Rača':        {niza:17, visa:27},
+  'Novalja':          {niza:15, visa:25},
+  'Otok (Sinj)':      {niza:17, visa:27},
+  'Pula':             {niza:22, visa:32},
+  'Rijeka':           {niza:20, visa:25},
+  'Trnovec Bartolovečki': {niza:20, visa:30},
+  'Tučepi':           {niza:17, visa:30},
+  'Veliko Trojstvo':  {niza:20, visa:30},
+  'Vrlika':           {niza:18, visa:28},
+  'Zagreb':           {niza:23, visa:33},
+};
+// Svi gradovi RH abecednim redom (samo naziv — stopa se dohvati iz GRADOVI_STOPE ili default)
+const SVI_GRADOVI = [
+  'Bakar','Beli Manastir','Belišće','Benkovac','Biograd na Moru','Bjelovar','Buzet',
+  'Cres','Crikvenica','Čabar','Čakovec','Čazma','Daruvar','Delnice','Donja Stubica',
+  'Donji Miholjac','Drniš','Dubrovnik','Dugo Selo','Đakovo','Đurđevac','Garešnica',
+  'Glina','Gospić','Grubišno Polje','Hrv. Bjelovar','Hvar','Ilok','Imotski',
+  'Ivanec','Ivanić-Grad','Jastrebarsko','Karlovac','Kastav','Kaštela','Klanjec',
+  'Knin','Komiža','Koprivnica','Korčula','Kostajnica','Kraljevica','Krapina',
+  'Križevci','Krk','Kutina','Kutjevo','Labin','Lepoglava','Lipik','Ludbreg',
+  'Makarska','Mali Lošinj','Metković','Mursko Središće','Nova Gradiška','Nova Rača',
+  'Novalja','Novska','Obrovac','Ogulin','Omiš','Opuzen','Orahovica','Oroslavje',
+  'Osijek','Otok (Sinj)','Ozalj','Pakrac','Pazin','Petrinja','Pleternica','Ploče',
+  'Popovača','Poreč','Požega','Pregrada','Prelog','Pula','Pula-Pola','Rab','Rijeka',
+  'Rovinj','Senj','Sinj','Sisak','Skradin','Slavonski Brod','Solin','Split',
+  'Stari Grad','Supetar','Sveta Nedjelja','Sveti Ivan Zelina','Šibenik','Trilj',
+  'Trogir','Trnovec Bartolovečki','Tučepi','Ugljan','Umag','Varaždin','Varaždinske Toplice',
+  'Velika Gorica','Veliko Trojstvo','Virovitica','Vis','Vodice','Vodnjan','Vojnić',
+  'Vrgorac','Vrlika','Vukovar','Zabok','Zadar','Zagreb','Zaprešić','Zlatar','Županja'
+];
+function getGradStopa(grad){
+  // Normalizacija: Pula-Pola → Pula
+  const key = grad.replace('Pula-Pola','Pula');
+  return GRADOVI_STOPE[key]||{niza:20,visa:30};
+}
+function getGrad(){return localStorage.getItem('fk_grad')||'Pula'}
+function populateGradSelects(selected){
+  ['a-s-grad','p-s-grad','ob-grad'].forEach(id=>{
+    const sel=g(id); if(!sel)return;
+    if(sel.options.length>0&&sel.value===selected)return; // already populated
+    sel.innerHTML='';
+    SVI_GRADOVI.forEach(gr=>{
+      const o=document.createElement('option');
+      o.value=gr;o.textContent=gr;
+      if(gr===selected)o.selected=true;
+      sel.appendChild(o);
+    });
+  });
+}
+function settingsGradChange(srcId){
+  // srcId passed explicitly from onchange to avoid relying on activeElement (unreliable on iOS PWA)
+  const src=srcId||'a-s-grad';
+  const grad=g(src)?.value||getGrad();
+  localStorage.setItem('fk_grad',grad);
+  applyGrad(grad);
+  // Sync both selects to same value
+  const sA=g('a-s-grad');if(sA)sA.value=grad;
+  const sP=g('p-s-grad');if(sP)sP.value=grad;
+}
+function applyGrad(grad){
+  const stopa = getGradStopa(grad);
+  const gradLabel = grad+' 2026 niža stopa (%)';
+  const lA=g('a-s-pd-label'); if(lA)lA.innerHTML=gradLabel+' <span class="sbg">JLS</span>';
+  const lP=g('p-s-pd-label'); if(lP)lP.innerHTML=gradLabel+' <span class="sbg">JLS</span>';
+  const elA=g('a-s-pd'); if(elA)elA.value=stopa.niza;
+  const elP=g('p-s-pd'); if(elP)elP.value=stopa.niza;
+  // Update info text
+  const infoA=g('a-pd-info');
+  if(infoA)infoA.textContent='ℹ️ '+grad+' 2026: '+stopa.niza+'% niža stopa / '+stopa.visa+'% viša stopa. Prirez ukinut. ZO plaća Naručitelj.';
+  // Sync selects
+  populateGradSelects(grad);
+  // Save to config
+  const ac=aCfg(); ac.pd=stopa.niza; safeStore('fk_a',ac);
+  const pc=pCfg(); pc.pd=stopa.niza; safeStore('fk_p',pc);
+  if(typeof aCalc==='function')aCalc();
+  if(typeof pCalc==='function')pCalc();
+}
+
+// ═══ THEME COLOR META SYNC ═══
+function syncThemeColor() {
+  const meta = document.getElementById('themeColorMeta');
+  if (!meta) return;
+  meta.content = document.body.classList.contains('light') ? '#f0f2f5' : '#0b0c0e';
+}
+
+// ═══ SERVICE WORKER ═══
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+// ═══ INIT ═══
+document.addEventListener('DOMContentLoaded',()=>{
+  // Theme
+  const th=localStorage.getItem('fk_theme');
+  if(th==='d'){document.body.classList.remove('light');const k=g('themeKnob');if(k)k.textContent='🌙';}
+  syncThemeColor();
+  // Onboarding — samo prvi put
+  if(!localStorage.getItem('fk_onboard')){
+    populateGradSelects(getGrad());
+    onboardPopulateGrad();  // BUG FIX: ob-grad se mora puniti zasebno pri prvom pokretanju
+    g('onboardModal').classList.add('on');
+  } else {
+    applyStatus(getStatus());
+    applyGrad(getGrad());
+    if(!localStorage.getItem('fk_gdpr')){const b=g('gdprBar');if(b)b.style.display='flex';}
+  }
+  // Mode
+  const savedMode=localStorage.getItem('fk_mode')||'a';
+  setMode(savedMode);
+  if(savedMode==='a'||!localStorage.getItem('fk_mode')){
+    showPg('a-plan');
+  }
+  today('a-dt');today('p-dt');today('ug-dt');
+  checkBackupReminder();
+});
+</script>
+</body>
+</html>
