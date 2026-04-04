@@ -83,4 +83,4 @@ python3 -m http.server 8080
 
 ---
 
-*FotoKalk — RH porezna pravila 2026 | Adriatic.hr ugovori*
+*FotoKalk — RH porezna pravila 2026
