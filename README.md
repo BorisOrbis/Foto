@@ -1,0 +1,2 @@
+# Foto
+Foto aplikacija
