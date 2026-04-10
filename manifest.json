@@ -1,7 +1,7 @@
 {
   "name": "FotoKalk — Kalkulator honorara",
   "short_name": "FotoKalk",
-  "description": "Kalkulator honorara za fotografe — Adriatic.hr i privatni najam (RH 2026)",
+  "description": "Kalkulator honorara za fotografe (RH 2026)",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
