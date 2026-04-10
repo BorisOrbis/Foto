@@ -1,6 +1,6 @@
 # FotoKalk — Kalkulator honorara za fotografe
 
-PWA aplikacija za fotografe koji rade putem **Adriatic.hr** ugovora ili privatnog najma (RH, porezna pravila 2026).
+PWA aplikacija za fotografe (RH, porezna pravila 2026).
 
 ## 🚀 Živuća aplikacija
 
